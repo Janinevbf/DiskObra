@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Loja {
+  idLoja     Int             @id @default(autoincrement())
+  noLoja     String          @db.VarChar(100)
+  nrCnpj     String          @db.VarChar(25)
+  produtos   Produto[]
+  telefones  TelefoneLoja[]
+  enderecos  EnderecosLoja[]
+
+  @@map("TB_LOJA")
+}
+
+model Produto {
+  cdProduto        Int            @id @default(autoincrement())
+  idLoja           Int
+  noProduto        String         @db.VarChar(200)
+  qtProdutoEstoque Int
+  vlProdutoUnitario Float
+  loja             Loja           @relation(fields: [idLoja], references: [idLoja])
+  itensVenda       ProdutoVenda[]
+
+  @@map("TB_PRODUTO")
+}
+
+model Cliente {
+  idCliente Int               @id @default(autoincrement())
+  noCliente String            @db.VarChar(155)
+  nrRg      Int?
+  nrCpf     String            @db.Char(11)
+  telefones TelefoneCliente[]
+  enderecos EnderecoCliente[]
+  vendas    Venda[]
+
+  @@map("TB_CLIENTE")
+}
+
+model Venda {
+  idVenda      Int            @id @default(autoincrement())
+  idCliente    Int
+  dhPagamento  DateTime?
+  vlTotalVenda Float
+  icPago       Int
+  tpPagamento  String?        @db.VarChar(50)
+  cliente      Cliente        @relation(fields: [idCliente], references: [idCliente])
+  produtos     ProdutoVenda[]
+
+  @@map("TB_VENDA")
+}
+
+model ProdutoVenda {
+  idProdutoVenda    Int     @id @default(autoincrement())
+  idVenda           Int
+  cdProduto         Int
+  qtProdutoRetirado Int
+  vlTotalProduto    Float
+  venda             Venda   @relation(fields: [idVenda], references: [idVenda])
+  produto           Produto @relation(fields: [cdProduto], references: [cdProduto])
+
+  @@map("TB_PRODUTO_VENDA")
+}
+
+model TelefoneLoja {
+  idTelefoneLoja Int    @id @default(autoincrement())
+  idLoja         Int
+  nrTelefone     String @db.VarChar(20)
+  loja           Loja   @relation(fields: [idLoja], references: [idLoja])
+
+  @@map("TB_TELEFONE_LOJA")
+}
+
+model EnderecosLoja {
+  idEnderecoLoja Int    @id @default(autoincrement())
+  idLoja         Int
+  sgUf           String @db.Char(2)
+  noEndereco     String @db.VarChar(150)
+  noCidade       String @db.VarChar(100)
+  loja           Loja   @relation(fields: [idLoja], references: [idLoja])
+
+  @@map("TB_ENDERECO_LOJA")
+}
+
+model TelefoneCliente {
+  idTelefoneCliente Int     @id @default(autoincrement())
+  idCliente         Int
+  nrTelefone        String  @db.VarChar(20)
+  cliente           Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("TB_TELEFONE_CLIENTE")
+}
+
+model EnderecoCliente {
+  idEnderecoCliente Int     @id @default(autoincrement())
+  idCliente         Int
+  sgUf              String  @db.Char(2)
+  noEndereco        String  @db.VarChar(150)
+  noCidade          String  @db.VarChar(100)
+  cliente           Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("TB_ENDERECO_CLIENTE")
+}
