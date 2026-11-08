@@ -9,7 +9,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Iniciando o semeamento do banco de dados...");
+  console.log(" Iniciando o semeamento do banco de dados...");
 
   // 1. Criar uma Loja de Exemplo
   const loja = await prisma.loja.create({
@@ -95,12 +95,12 @@ async function main() {
     },
   });
 
-  console.log("✅ Dados de teste inseridos com sucesso!");
+  console.log(" Dados de teste inseridos com sucesso!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Erro ao popular o banco:", e);
+    console.error(" Erro ao popular o banco:", e);
     process.exit(1);
   })
   .finally(async () => {

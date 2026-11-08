@@ -6,10 +6,34 @@ datasource db {
   provider = "postgresql"
 }
 
+// Tipos de usuários do sistema
+enum TipoUsuario {
+  CLIENTE
+  ADMIN
+  DONO_LOJA
+}
+
+model Usuario {
+  idUsuario    Int         @id @default(autoincrement())
+  noEmail      String      @unique @db.VarChar(150)
+  dsSenha      String      @db.VarChar(255)
+  tpUsuario    TipoUsuario @default(CLIENTE)
+  
+  // Relacionamentos opcionais dependendo do tipo
+  cliente      Cliente?    @relation(fields: [idCliente], references: [idCliente])
+  idCliente    Int?        @unique
+
+  loja         Loja?       @relation(fields: [idLoja], references: [idLoja])
+  idLoja       Int?        @unique
+
+  @@map("TB_USUARIO")
+}
+
 model Loja {
   idLoja     Int             @id @default(autoincrement())
   noLoja     String          @db.VarChar(100)
   nrCnpj     String          @db.VarChar(25)
+  usuario    Usuario?        // Dono da loja
   produtos   Produto[]
   telefones  TelefoneLoja[]
   enderecos  EnderecosLoja[]
@@ -34,6 +58,7 @@ model Cliente {
   noCliente String            @db.VarChar(155)
   nrRg      Int?
   nrCpf     String            @db.Char(11)
+  usuario   Usuario?          // Conta de acesso do cliente
   telefones TelefoneCliente[]
   enderecos EnderecoCliente[]
   vendas    Venda[]
