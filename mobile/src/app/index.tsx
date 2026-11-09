@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // O Expo já inclui ícones por padrão
+import 'expo-router/entry';
+
 
 interface Loja {
   idLoja: string;
@@ -60,11 +61,11 @@ export default function CatalogScreen() {
 
       {/* Categorias Rápidas (Horizontal) */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}>🧱 Materiais Básicos</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}>🔩 Ferragens</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}>⚡ Elétrica</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}>🚰 Hidráulica</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}>🎨 Tintas</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}> Materiais Básicos</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}> Ferragens</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}> Elétrica</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}> Hidráulica</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}> Tintas</Text></View>
       </ScrollView>
 
       {/* Lista de Lojas */}

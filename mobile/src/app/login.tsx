@@ -5,29 +5,48 @@ import { useRouter } from 'expo-router';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [tipoSelecionado, setTipoSelecionado] = useState<'CLIENTE' | 'ADMIN' | 'DONO_LOJA'>('CLIENTE');
+  const [tipoSelecionado, setTipoSelecionado] = useState<'CLIENTE' | 'DONO_LOJA'>('CLIENTE');
   const router = useRouter();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !senha) {
       Alert.alert("Atenção", "Preencha o e-mail e a senha!");
       return;
     }
 
-    if (tipoSelecionado === 'CLIENTE') {
-      router.replace('/cliente/dashboard');
-    } else if (tipoSelecionado === 'ADMIN') {
-      router.replace('/admin/dashboard');
-    } else if (tipoSelecionado === 'DONO_LOJA') {
-      router.replace('/loja/dashboard');
+    try {
+      const response = await fetch('http://192.168.15.8:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao fazer login");
+      }
+
+      // Redirecionamento blindado baseado estritamente no tipo de usuário retornado
+     if (data.tipoUsuario === 'DONO_LOJA') {
+        // Envia o lojaId gerado pelo banco diretamente para a tela de dashboard da loja
+        router.replace({
+          pathname: '/loja/dashboard',
+          params: { lojaId: data.lojaId, nomeLoja: data.nomeLoja || 'Construtora' }
+        });
+      }
+
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Não foi possível conectar ao servidor.");
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>DiskObra - Acesso</Text>
-      <Text style={styles.subtitle}>Selecione seu perfil e entre</Text>
+      <Text style={styles.subtitle}>Entre na sua conta</Text>
 
+      {/* Apenas Cliente e Construtora visíveis */}
       <View style={styles.typeContainer}>
         <TouchableOpacity 
           style={[styles.typeButton, tipoSelecionado === 'CLIENTE' && styles.typeSelected]}
@@ -41,13 +60,6 @@ export default function LoginScreen() {
           onPress={() => setTipoSelecionado('DONO_LOJA')}
         >
           <Text style={[styles.typeText, tipoSelecionado === 'DONO_LOJA' && styles.typeTextSelected]}>Construtora</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.typeButton, tipoSelecionado === 'ADMIN' && styles.typeSelected]}
-          onPress={() => setTipoSelecionado('ADMIN')}
-        >
-          <Text style={[styles.typeText, tipoSelecionado === 'ADMIN' && styles.typeTextSelected]}>Admin</Text>
         </TouchableOpacity>
       </View>
 
@@ -83,9 +95,17 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>Voltar ao Catálogo</Text>
-      </TouchableOpacity>
+       {/* Botão extra para ir para o Catálogo */}
+            <TouchableOpacity 
+              style={styles.catalogButton} 
+              onPress={() => router.replace('/')}
+            >
+              <Text style={styles.catalogButtonText}> Catálogo</Text>
+            </TouchableOpacity>
+      
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Text style={styles.backButtonText}>Voltar ao Login</Text>
+            </TouchableOpacity>
     </View>
   );
 }
@@ -107,5 +127,7 @@ const styles = StyleSheet.create({
   secondaryButton: { borderWidth: 1, borderColor: '#FF5722', padding: 12, borderRadius: 8, alignItems: 'center', width: '100%' },
   secondaryButtonText: { color: '#FF5722', fontSize: 16, fontWeight: 'bold' },
   backButton: { marginTop: 20, alignItems: 'center' },
-  backButtonText: { color: '#666', fontSize: 14 }
+  backButtonText: { color: '#666', fontSize: 14 },
+  catalogButton: { backgroundColor: '#6c757d', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  catalogButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
 });
