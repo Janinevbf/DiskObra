@@ -78,6 +78,9 @@ async function main() {
       icPago: 1, // Pago
       tpPagamento: "Pix",
       dhPagamento: new Date(),
+      noEnderecoEntrega: "Rua das Flores, 45",
+      noCidadeEntrega: "Guarulhos",
+      sgUfEntrega: "SP",
       produtos: {
         create: [
           {

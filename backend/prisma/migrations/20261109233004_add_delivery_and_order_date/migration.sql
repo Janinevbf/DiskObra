@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "TB_VENDA" ADD COLUMN     "dhVenda" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "noCidadeEntrega" VARCHAR(100),
+ADD COLUMN     "noEnderecoEntrega" VARCHAR(150),
+ADD COLUMN     "sgUfEntrega" CHAR(2);

@@ -1,18 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
+import { API_URL } from '../../config/api';
+import { useAuth } from '../../context/auth';
 
 export default function AdminDashboard() {
-  const [lojas, setLojas] = useState([]);
-  const router = useRouter();
+  const [lojas, setLojas] = useState<any[]>([]);
+  const { sessao, sair } = useAuth();
+
+  const handleSair = () => {
+    sair();
+  };
 
   // Monitora todas as lojas e dados do sistema
   useEffect(() => {
-    fetch('http://192.168.15.8:3000/lojas')
+    fetch(`${API_URL}/lojas`)
       .then(res => res.json())
-      .then(data => setLojas(data))
+      .then(data => setLojas(Array.isArray(data) ? data : []))
       .catch(err => console.error("Erro ao carregar dados do admin:", err));
   }, []);
+
+  if (!sessao || sessao.tipoUsuario !== 'ADMIN') {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <View style={styles.container}>
@@ -27,7 +37,7 @@ export default function AdminDashboard() {
       
       <FlatList
         data={lojas}
-        keyExtractor={(item: any) => item.idLoja}
+        keyExtractor={(item: any) => String(item.idLoja)}
         renderItem={({ item }: any) => (
           <View style={styles.storeCard}>
             <Text style={styles.storeName}>🏢 {item.noLoja}</Text>
@@ -37,7 +47,7 @@ export default function AdminDashboard() {
         )}
       />
 
-      <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/login')}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleSair}>
         <Text style={styles.logoutText}>Sair do Painel Admin</Text>
       </TouchableOpacity>
     </View>

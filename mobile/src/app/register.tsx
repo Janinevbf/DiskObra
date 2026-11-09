@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { API_URL } from '../config/api';
+import { useAuth } from '../context/auth';
 
 export default function RegisterScreen() {
   const [nome, setNome] = useState('');
@@ -19,6 +21,7 @@ export default function RegisterScreen() {
   const [sgUf, setSgUf] = useState('');
 
   const router = useRouter();
+  const { entrar } = useAuth();
 
   const handleRegister = async () => {
     if (!email || !senha) {
@@ -37,7 +40,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      const response = await fetch('http://192.168.15.8:3000/register', {
+      const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,14 +60,30 @@ export default function RegisterScreen() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
-      Alert.alert("Sucesso!", "Construtora cadastrada com sucesso! Faça seu login.",
+      entrar({
+        usuarioId: data.usuarioId ?? null,
+        tipoUsuario: data.tipoUsuario ?? tipoUsuario,
+        email,
+        nome: data.nome ?? nome,
+        lojaId: data.lojaId ?? null,
+        clienteId: data.clienteId ?? null,
+      });
+
+      Alert.alert(
+        "Sucesso!",
+        data.tipoUsuario === 'DONO_LOJA'
+          ? "Construtora cadastrada com sucesso! Bem-vindo ao painel."
+          : "Cliente cadastrado com sucesso! Bem-vindo ao catálogo.",
         [
-          { 
-            text: "OK", 
-            onPress: () => router.replace('/login') // Ou router.push('/login')
-          }
-        ]);
-      router.replace('/login');
+          {
+            text: "OK",
+            onPress: () =>
+              router.replace(
+                (data.tipoUsuario === 'DONO_LOJA' ? '/loja' : '/cliente') as any
+              ),
+          },
+        ]
+      );
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Falha ao registrar.");
     }
@@ -113,7 +132,9 @@ export default function RegisterScreen() {
       <TextInput style={styles.input} placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
 
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Cadastrar Construtora</Text>
+        <Text style={styles.buttonText}>
+          {tipoUsuario === 'DONO_LOJA' ? 'Cadastrar Construtora' : 'Criar Conta'}
+        </Text>
       </TouchableOpacity>
 
       {/* Botão extra para ir para o Catálogo */}

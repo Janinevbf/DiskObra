@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { API_URL } from '../config/api';
+import { useAuth } from '../context/auth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [tipoSelecionado, setTipoSelecionado] = useState<'CLIENTE' | 'DONO_LOJA'>('CLIENTE');
   const router = useRouter();
+  const { entrar, sessao } = useAuth();
+  const [destino, setDestino] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (sessao && destino) {
+      router.replace(destino as any);
+    }
+  }, [sessao, destino, router]);
 
   const handleLogin = async () => {
     if (!email || !senha) {
@@ -15,7 +25,7 @@ export default function LoginScreen() {
     }
 
     try {
-      const response = await fetch('http://192.168.15.8:3000/login', {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),
@@ -24,18 +34,26 @@ export default function LoginScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao fazer login");
+        Alert.alert("Atenção", data.error || "Erro ao fazer login");
+        return;
       }
 
-      // Redirecionamento blindado baseado estritamente no tipo de usuário retornado
-     if (data.tipoUsuario === 'DONO_LOJA') {
-        // Envia o lojaId gerado pelo banco diretamente para a tela de dashboard da loja
-        router.replace({
-          pathname: '/loja/dashboard',
-          params: { lojaId: data.lojaId, nomeLoja: data.nomeLoja || 'Construtora' }
-        });
-      }
+      entrar({
+        usuarioId: data.usuarioId ?? null,
+        tipoUsuario: data.tipoUsuario,
+        email: data.email ?? email,
+        nome: data.nome ?? email,
+        lojaId: data.lojaId ?? null,
+        clienteId: data.clienteId ?? null,
+      });
 
+      setDestino(
+        data.tipoUsuario === 'DONO_LOJA'
+          ? '/loja'
+          : data.tipoUsuario === 'ADMIN'
+            ? '/admin/dashboard'
+            : '/cliente'
+      );
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Não foi possível conectar ao servidor.");
     }
@@ -55,12 +73,12 @@ export default function LoginScreen() {
           <Text style={[styles.typeText, tipoSelecionado === 'CLIENTE' && styles.typeTextSelected]}>Cliente</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={[styles.typeButton, tipoSelecionado === 'DONO_LOJA' && styles.typeSelected]}
           onPress={() => setTipoSelecionado('DONO_LOJA')}
         >
           <Text style={[styles.typeText, tipoSelecionado === 'DONO_LOJA' && styles.typeTextSelected]}>Construtora</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <TextInput
@@ -103,9 +121,7 @@ export default function LoginScreen() {
               <Text style={styles.catalogButtonText}> Catálogo</Text>
             </TouchableOpacity>
       
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Text style={styles.backButtonText}>Voltar ao Login</Text>
-            </TouchableOpacity>
+            
     </View>
   );
 }

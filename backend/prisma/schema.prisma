@@ -67,14 +67,18 @@ model Cliente {
 }
 
 model Venda {
-  idVenda      Int            @id @default(autoincrement())
-  idCliente    Int
-  dhPagamento  DateTime?
-  vlTotalVenda Float
-  icPago       Int
-  tpPagamento  String?        @db.VarChar(50)
-  cliente      Cliente        @relation(fields: [idCliente], references: [idCliente])
-  produtos     ProdutoVenda[]
+  idVenda           Int            @id @default(autoincrement())
+  idCliente         Int
+  dhVenda           DateTime       @default(now())
+  dhPagamento       DateTime?
+  vlTotalVenda      Float
+  icPago            Int
+  tpPagamento       String?        @db.VarChar(50)
+  noEnderecoEntrega String?        @db.VarChar(150)
+  noCidadeEntrega   String?        @db.VarChar(100)
+  sgUfEntrega       String?        @db.Char(2)
+  cliente           Cliente        @relation(fields: [idCliente], references: [idCliente])
+  produtos          ProdutoVenda[]
 
   @@map("TB_VENDA")
 }

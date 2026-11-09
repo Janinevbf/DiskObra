@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import 'expo-router/entry';
-
+import { API_URL } from '../config/api';
 
 interface Loja {
-  idLoja: string;
+  idLoja: number; // Alterado para number para corresponder ao idInt do banco
   noLoja: string;
   nrCnpj: string;
 }
@@ -18,14 +17,14 @@ export default function CatalogScreen() {
 
   // Busca as lojas cadastradas no backend
   useEffect(() => {
-    fetch('http://192.168.15.8:3000/lojas')
-      .then((response) => response.json())
+    fetch(`${API_URL}/lojas`)
+      .then((res) => res.json())
       .then((data) => {
-        setLojas(data);
+        setLojas(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch((error) => {
-        console.error("Erro ao buscar lojas:", error);
+      .catch((err) => {
+        console.error("Erro ao buscar:", err);
         setLoading(false);
       });
   }, []);
@@ -61,11 +60,11 @@ export default function CatalogScreen() {
 
       {/* Categorias Rápidas (Horizontal) */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}> Materiais Básicos</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}> Ferragens</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}> Elétrica</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}> Hidráulica</Text></View>
-        <View style={styles.categoryChip}><Text style={styles.categoryText}> Tintas</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}>🧱 Materiais Básicos</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}>🔩 Ferragens</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}>⚡ Elétrica</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}>🚰 Hidráulica</Text></View>
+        <View style={styles.categoryChip}><Text style={styles.categoryText}>🎨 Tintas</Text></View>
       </ScrollView>
 
       {/* Lista de Lojas */}
@@ -76,22 +75,24 @@ export default function CatalogScreen() {
       ) : lojasFiltradas.length === 0 ? (
         <Text style={styles.emptyText}>Nenhuma loja encontrada.</Text>
       ) : (
-        <FlatList
-          data={lojasFiltradas}
-          keyExtractor={(item) => item.idLoja}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.storeCard} activeOpacity={0.8}>
-              <View style={styles.storeAvatar}>
-                <Text style={styles.storeAvatarText}>{item.noLoja.charAt(0).toUpperCase()}</Text>
-              </View>
-              <View style={styles.storeInfo}>
-                <Text style={styles.storeName}>{item.noLoja}</Text>
-                <Text style={styles.storeDetails}>CNPJ: {item.nrCnpj}</Text>
-                <Text style={styles.storeDelivery}>🚚 Entrega rápida • 20-30 min</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
+        <View style={styles.listContainer}>
+          <FlatList
+            data={lojasFiltradas}
+            keyExtractor={(item) => item.idLoja.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.storeCard} activeOpacity={0.8}>
+                <View style={styles.storeAvatar}>
+                  <Text style={styles.storeAvatarText}>{item.noLoja ? item.noLoja.charAt(0).toUpperCase() : 'L'}</Text>
+                </View>
+                <View style={styles.storeInfo}>
+                  <Text style={styles.storeName}>{item.noLoja}</Text>
+                  <Text style={styles.storeDetails}>CNPJ: {item.nrCnpj}</Text>
+                  <Text style={styles.storeDelivery}>🚚 Entrega rápida • 20-30 min</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
       )}
     </View>
   );
@@ -110,6 +111,7 @@ const styles = StyleSheet.create({
   categoryChip: { backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#eee', height: 38, justifyContent: 'center' },
   categoryText: { fontSize: 13, fontWeight: '600', color: '#444' },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 10 },
+  listContainer: { flex: 1 }, // <--- Essencial para a FlatList renderizar e rolar corretamente
   storeCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 12, borderRadius: 12, marginBottom: 10, alignItems: 'center', borderWidth: 1, borderColor: '#f0f0f0' },
   storeAvatar: { width: 55, height: 55, backgroundColor: '#FF5722', borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   storeAvatarText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
