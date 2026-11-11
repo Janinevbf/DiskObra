@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Carrinho · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="cliente">
+    <div id="hd"></div>
+    <main class="cart">
+        <section class="pnl">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Preço</th>
+                        <th>Quantidade</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cart"></tbody>
+            </table>
+        </section>
+        <aside class="pnl sum">
+            <h2>Resumo do pedido</h2>
+            <div><span>Subtotal</span><span id="sub"></span></div>
+            <div><span>Frete</span><span id="fr">A definir</span></div>
+            <div class="cep" style="flex-wrap:wrap"><span style="width:100%">Calcular frete</span><input id="cep"
+                    inputmode="numeric" placeholder="Digite seu CEP aqui"><button class="btn-or" id="calc"
+                    style="border-radius:10px">Calcular</button></div>
+            <div><b>Total</b><b id="tot"></b></div><button class="btn-gr" id="buy">Finalizar compra</button><a
+                class="cont" href="produtos.html">continuar comprando</a>
+        </aside>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>

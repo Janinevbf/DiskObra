@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Cadastrar produto · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="deposito">
+    <div id="hd"></div>
+    <div class="dep">
+        <h1>CADASTRAR NOVO PRODUTO</h1>
+        <aside class="side" id="sidebar"></aside>
+        <div>
+            <section class="pnl">
+                <h2>Informações básicas</h2>
+                <div class="fr"><label style="flex:3">Nome do produto<input
+                            placeholder="Digite o nome do produto aqui"></label><label style="flex:1.2">Código/SKU<input
+                            placeholder="Digite o código/SKU aqui"></label><label>Categoria<select>
+                            <option>Construção</option>
+                            <option>Ferramentas</option>
+                            <option>Tintas</option>
+                            <option>Elétrica</option>
+                        </select></label></div>
+            </section>
+            <div class="cols">
+                <section class="pnl">
+                    <h2>Detalhes e estoque</h2>
+                    <div class="fr"><label>Medida<select>
+                                <option>Unidade</option>
+                                <option>Caixa</option>
+                                <option>Metro</option>
+                            </select></label><label>Peso(kg)<input></label><label>Altura(m)<input></label><label>Largura(m)<input></label><label>Profundidade(cm)<input></label>
+                    </div>
+                    <div class="fr"><label>Marca<input></label><label>Cor<input></label><label>Preço(R$)<input
+                                inputmode="decimal"></label><span style="flex:2"></span></div>
+                    <div class="fr"><label>Disponibilidade para venda<input></label><label>Quantidade em estoque<input
+                                type="number" min="0"></label><label>Disponível para entrega<select>
+                                <option>Sim</option>
+                                <option>Não</option>
+                            </select></label><label>Disponível para retirada<select>
+                                <option>Não</option>
+                                <option>Sim</option>
+                            </select></label></div>
+                </section>
+                <section class="pnl">
+                    <h2>Mídia</h2><label>Imagem principal</label><button class="up">🖼 Inserir
+                        imagem</button><label>Imagens adicionais</label><button class="up">🖼 Inserir
+                        imagem</button><label>Vídeos</label><button class="up">🎥 Inserir vídeos</button>
+                </section>
+            </div>
+            <button class="btn-gr sv" data-save>Salvar</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Cadastro de depósito · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="cliente" data-nav2="MEUS PEDIDOS">
+    <div id="hd"></div>
+    <main class="auth">
+        <section class="box">
+            <h1>Cadastre seu depósito</h1>
+            <p class="sub">Venda seus produtos através do DiskObra!</p>
+            <form data-auth="deposito-cadastrar-produto.html" novalidate><label class="fld"><span
+                        class="ic">@</span><input type="email" placeholder="Digite o e-mail da empresa"
+                        aria-label="Digite o e-mail da empresa"></label><label class="fld"><span
+                        class="ic">👤</span><input type="text" placeholder="Digite o CNPJ da empresa"
+                        aria-label="Digite o CNPJ da empresa"></label><label class="fld"><span
+                        class="ic">📞</span><input type="tel" placeholder="Digite o número de telefone da empresa"
+                        aria-label="Digite o número de telefone da empresa"></label><label class="fld"><span
+                        class="ic">🔒</span><input type="password" placeholder="Digite uma senha"
+                        aria-label="Digite uma senha"></label><label class="fld"><span class="ic">🔒</span><input
+                        type="password" placeholder="Digite a mesma senha novamente"
+                        aria-label="Digite a mesma senha novamente"></label>
+                <p class="msg" role="alert"></p><button class="btn-main">CRIAR CONTA</button>
+            </form>
+            <p class="lnk">Já possui uma conta? <a href="login.html">Login</a></p>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>

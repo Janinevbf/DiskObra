@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Login · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="cliente">
+    <div id="hd"></div>
+    <main class="auth">
+        <section class="box">
+            <h1>Acesse sua conta</h1>
+            <p class="sub">Faça login para gerenciar seus pedidos!</p>
+            <form data-auth="conta.html" novalidate><label class="fld"><span class="ic">👤</span><input type="text"
+                        placeholder="Digite seu e-mail ou CPF" aria-label="Digite seu e-mail ou CPF"></label><label
+                    class="fld"><span class="ic">🔒</span><input type="password" placeholder="Digite sua senha"
+                        aria-label="Digite sua senha"></label>
+                <a class="forgot lnk" href="#">Esqueci minha senha</a>
+                <p class="msg" role="alert"></p><button class="btn-main">ENTRAR</button>
+            </form>
+            <p class="lnk">Não possui cadastro? <a href="cadastro.html">Cadastre-se</a></p>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>

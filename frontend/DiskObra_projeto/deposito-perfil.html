@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Perfil do depósito · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="deposito">
+    <div id="hd"></div>
+    <div class="dep">
+        <h1>PERFIL DO DEPÓSITO</h1>
+        <aside class="side" id="sidebar"></aside>
+        <section class="pnl">
+            <div class="fr"><label style="flex:2">Nome do depósito<input></label><label>Foto do logotipo<button
+                        class="up" style="margin-top:6px">🖼 Inserir imagem</button></label></div>
+            <div class="fr"><label style="flex:3">Endereço<input></label><label>Número<input></label><label>CEP<input
+                        inputmode="numeric"></label></div>
+            <div class="fr"><label>Telefone<input type="tel"></label><label style="flex:2">E-mail<input
+                        type="email"></label></div>
+            <h2 style="font-size:22px;margin:24px 0 10px">Horário de funcionamento</h2>
+            <div class="fr"><label>Abre<select>
+                        <option>08:00</option>
+                        <option>09:00</option>
+                    </select></label><label>Fecha<select>
+                        <option>20:30</option>
+                        <option>18:00</option>
+                    </select></label><label style="flex:2">Dias abertos<select>
+                        <option>Seg., Ter., Qua., Qui.,Sex.</option>
+                        <option>Seg. a Sáb.</option>
+                        <option>Todos os dias</option>
+                    </select></label><label>Aberto em feriados<select>
+                        <option>Sim</option>
+                        <option>Não</option>
+                    </select></label></div>
+            <button class="btn-gr sv" data-save>Salvar</button>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
