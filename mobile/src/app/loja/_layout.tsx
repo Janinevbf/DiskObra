@@ -21,7 +21,13 @@ export default function LojaLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Produtos',
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="estoque"
+        options={{
+          title: 'Estoque',
           tabBarIcon: ({ color, size }) => (
             <Text style={{ fontSize: size, color }}>🧱</Text>
           ),

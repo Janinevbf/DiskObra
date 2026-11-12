@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Produto · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="deposito">
+    <div id="hd"></div>
+    <div class="dep">
+        <h1 id="produtoPageTitle">CADASTRAR NOVO PRODUTO</h1>
+        <aside class="side" id="sidebar"></aside>
+        <div>
+            <form id="formProduto" novalidate>
+                <section class="pnl">
+                    <h2>Dados do produto</h2>
+                    <div class="fr">
+                        <label style="flex:3">Nome do produto
+                            <input id="produtoNome" name="noProduto" placeholder="Ex.: Cimento 50 kg" maxlength="200" required>
+                        </label>
+                        <label>Preço (R$)
+                            <input id="produtoPreco" inputmode="decimal" placeholder="Ex.: 35,90" required>
+                        </label>
+                        <label>Quantidade em estoque
+                            <input id="produtoEstoque" type="number" min="0" step="1" required>
+                        </label>
+                    </div>
+                </section>
+                <section class="pnl">
+                    <h2>Imagem do produto</h2>
+                    <label for="produtoImagem">Escolher imagem (JPG, PNG ou WEBP)</label>
+                    <input id="produtoImagem" type="file" accept="image/jpeg,image/png,image/webp">
+                    <p class="image-help">A imagem será otimizada antes de enviar e aparecerá no catálogo.</p>
+                    <div class="product-image-preview" id="produtoImagemPreview" hidden>
+                        <img id="produtoImagemPreviewImg" alt="Pré-visualização do produto">
+                    </div>
+                </section>
+                <p class="msg" id="produtoMensagem" role="status" aria-live="polite"></p>
+                <button class="btn-gr sv" id="salvarProduto" type="submit">Cadastrar produto</button>
+            </form>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>

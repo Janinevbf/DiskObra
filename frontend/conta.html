@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Minha conta · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="cliente" data-page="conta">
+    <div id="hd"></div>
+    <main class="acc">
+        <aside class="side">
+            <h2>Minha Conta</h2>
+            <a href="#dados" data-target="dados" class="on">👤 Meus dados</a>
+            <a href="#pedidos" data-target="pedidos">📦 Meus pedidos</a>
+            <a href="#enderecos" data-target="enderecos">📍 Endereços</a>
+            <a href="#favoritos" data-target="favoritos">♡ Favoritos</a>
+            <a href="carrinho.html">🛒 Meu carrinho</a>
+            <a href="depositos.html">🏬 Depósitos</a>
+            <a class="out" href="login.html" data-logout>Sair da conta</a>
+        </aside>
+        <div>
+            <section class="pnl prof" id="sec-dados" data-sec="dados">
+                <div class="av" id="accAvatar" aria-hidden="true">--</div>
+                <div>
+                    <h2 id="accNome">Carregando...</h2>
+                    <p id="accEmail"></p>
+                    <p id="accTelefone"></p>
+                </div>
+            </section>
+
+            <section class="pnl" id="sec-pedidos" data-sec="pedidos" hidden>
+                <h2>Meus pedidos</h2>
+                <div id="accPedidos"><p>Carregando pedidos...</p></div>
+            </section>
+
+            <section class="pnl" id="sec-enderecos" data-sec="enderecos" hidden>
+                <h2>Meus endereços</h2>
+                <div id="accEnderecos"><p>Carregando endereços...</p></div>
+
+                <h2 style="margin-top:26px">Adicionar / editar endereço</h2>
+                <div class="addr-form">
+                    <div class="fld"><span class="ic">📮</span><input id="accCep" inputmode="numeric" placeholder="CEP"></div>
+                    <div class="fld"><span class="ic">📍</span><input id="accEndereco" placeholder="Endereço"></div>
+                    <div class="fld"><span class="ic">#</span><input id="accNumero" placeholder="Número"></div>
+                    <div class="fld"><span class="ic">🏙</span><input id="accCidade" placeholder="Cidade"></div>
+                    <div class="fld"><span class="ic">🗺</span><input id="accUf" maxlength="2" placeholder="UF"></div>
+                    <button class="btn-or" id="salvarEndereco">Salvar endereço</button>
+                </div>
+            </section>
+
+            <section class="pnl" id="sec-favoritos" data-sec="favoritos" hidden>
+                <h2>Favoritos</h2>
+                <div id="accFavoritos" class="grid fav-grid"><p>Carregando favoritos...</p></div>
+            </section>
+        </div>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>

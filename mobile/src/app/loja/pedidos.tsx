@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { API_URL } from '../../config/api';
 import { useAuth } from '../../context/auth';
@@ -38,21 +38,27 @@ export default function LojaPedidos() {
 
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     if (!lojaId) {
+      setErroCarregamento('Esta conta não está vinculada a uma loja. Saia e entre novamente ou confira o cadastro da loja.');
       setCarregando(false);
       return;
     }
 
+    setCarregando(true);
+    setErroCarregamento(null);
     try {
       const response = await fetch(`${API_URL}/lojas/${lojaId}/pedidos`);
       const data = await response.json();
-      if (response.ok) {
-        setPedidos(Array.isArray(data) ? data : []);
-      }
+      if (!response.ok) throw new Error(data.error || 'Não foi possível carregar os pedidos.');
+      setPedidos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
+      setErroCarregamento(
+        error instanceof Error ? error.message : 'Não foi possível conectar à API. Confira se o servidor está ativo.'
+      );
     } finally {
       setCarregando(false);
     }
@@ -84,7 +90,15 @@ export default function LojaPedidos() {
         {pedidos.length} pedido(s) com produtos da sua loja
       </Text>
 
-      {pedidos.length === 0 ? (
+      {erroCarregamento ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{erroCarregamento}</Text>
+          <Text style={styles.errorDetails}>API: {API_URL} · Loja: {lojaId ?? 'não vinculada'}</Text>
+          <TouchableOpacity onPress={carregar} style={styles.retryButton}>
+            <Text style={styles.retry}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : pedidos.length === 0 ? (
         <Text style={styles.empty}>Nenhum pedido recebido ainda.</Text>
       ) : (
         pedidos.map((pedido) => {
@@ -115,7 +129,11 @@ export default function LojaPedidos() {
                       styles.statusText,
                       pago ? styles.statusTextPago : styles.statusTextPendente,
                     ]}>
-                    {pago ? 'Pago' : 'Pendente'}
+                    {pago
+                      ? 'Pago'
+                      : pedido.tpPagamento === 'A combinar com a loja'
+                        ? 'Aguardando contato'
+                        : 'Pendente'}
                   </Text>
                 </View>
               </View>
@@ -130,7 +148,11 @@ export default function LojaPedidos() {
               <Text style={styles.value}>{endereco || 'Não informado'}</Text>
 
               <Text style={styles.label}>Forma de pagamento</Text>
-              <Text style={styles.value}>{pedido.tpPagamento ?? 'A combinar'}</Text>
+              <Text style={styles.value}>
+                {pedido.tpPagamento === 'A combinar com a loja'
+                  ? 'A combinar pelo WhatsApp'
+                  : pedido.tpPagamento ?? 'A combinar'}
+              </Text>
 
               <View style={styles.itensBox}>
                 {pedido.produtos.map((item) => (
@@ -163,6 +185,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: 'bold', color: '#333' },
   subtitle: { fontSize: 13, color: '#666', marginTop: 2, marginBottom: 16 },
   empty: { textAlign: 'center', color: '#777', marginTop: 30 },
+  errorBox: { backgroundColor: '#fff0f0', borderColor: '#e6b8b8', borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 12 },
+  errorText: { color: '#9b2525', fontSize: 13, lineHeight: 19 },
+  errorDetails: { color: '#7b5050', fontSize: 11, marginTop: 6 },
+  retryButton: { alignSelf: 'flex-start', marginTop: 8, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: '#d9534f', borderRadius: 6 },
+  retry: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,

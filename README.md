@@ -1,113 +1,158 @@
 # DiskObra
 
-Marketplace de materiais de construção que conecta **clientes**, **lojas/construtoras** e um **administrador**. O projeto está organizado em três partes:
+Marketplace de materiais de construção que conecta clientes e lojas. O repositório contém uma API Express, um site HTML/CSS/JavaScript e um aplicativo Expo.
 
-| Pasta | Descrição | Stack |
-|-------|-----------|-------|
-| `backend/` | API REST e acesso ao banco | Express 5, Prisma 7 (adapter `pg`), PostgreSQL, TypeScript (`tsx`) |
-| `mobile/` | Aplicativo (iOS/Android/Web) | Expo SDK 58, Expo Router, React Native 0.88, TypeScript |
-| `src/` | App web em Vite (placeholder) | React 19 + Vite |
+> **Estado do projeto:** protótipo em desenvolvimento. Pagamentos ainda não são processados por um gateway e a autenticação precisa de melhorias antes de uso em produção.
 
----
+## Estrutura
 
-## O que já está pronto
+| Pasta | Conteúdo |
+|---|---|
+| `backend/` | API Express, Prisma ORM 7, PostgreSQL e migrações |
+| `frontend/` | Site estático HTML/CSS/JavaScript para clientes e donos de loja |
+| `mobile/` | Aplicativo Expo/React Native com Expo Router |
+| `src/` | Exemplo inicial Vite/React; não é o site HTML de `frontend/` |
 
-### Backend (`backend/`)
+## Funcionalidades
 
-- Servidor Express com `cors` e `express.json`.
-- Conexão com PostgreSQL via **Prisma 7** usando o driver adapter `@prisma/adapter-pg` (`pg.Pool`).
-- Modelagem completa do domínio em `prisma/schema.prisma`.
-- Migrações versionadas (`prisma/migrations/`):
-  - `20261106134700_init` — criação das tabelas base.
-  - `20261108171855_add_usuarios_roles` — tabela de usuários e enum de papéis.
-- Script de seed (`seed.ts`) com dados de exemplo: loja, produtos, cliente e uma venda.
-- Rotas da API:
-  - `GET /lojas` — lista lojas com produtos, endereços e telefones.
-  - `POST /produtos` — cadastra produto em uma loja.
-  - `POST /enderecos` — cadastra endereço de uma loja.
-  - `POST /register` — cadastro de cliente ou de loja/construtora (com endereço e telefone).
-  - `POST /login` — login por e-mail/senha, retornando o `tipoUsuario` e o `lojaId` quando aplicável.
-- Login de administrador de demonstração (credenciais fixas no código).
+### Site HTML (`frontend/`)
 
-### Banco de dados
+- Catálogo, busca, detalhes dos produtos, depósitos, carrinho, conta, pedidos e favoritos.
+- Cadastro/login de clientes e donos de loja.
+- Painel da loja com perfil, cadastro/edição/exclusão de produtos, estoque e pedidos recebidos.
+- Upload de uma imagem principal por produto (JPG, PNG ou WEBP); a imagem é reduzida no navegador e guardada em `backend/uploads/produtos/`.
+- No checkout, o cliente escolhe **pagar na entrega** ou **pagar na retirada**. O site prepara uma mensagem por loja no WhatsApp; o cliente precisa abrir o link e tocar em **Enviar**.
 
-Modelos implementados (nomes físicos em `TB_*`):
+### Aplicativo (`mobile/`)
 
-- `Usuario` (`TB_USUARIO`) — e-mail, senha, papel (`CLIENTE`, `ADMIN`, `DONO_LOJA`) e vínculo opcional com cliente/loja.
-- `Loja` (`TB_LOJA`) — CNPJ, dono, produtos, telefones e endereços.
-- `Produto` (`TB_PRODUTO`) — estoque e valor unitário por loja.
-- `Cliente` (`TB_CLIENTE`) — nome, RG, CPF, telefones, endereços e vendas.
-- `Venda` (`TB_VENDA`) / `ProdutoVenda` (`TB_PRODUTO_VENDA`) — vendas e itens.
-- `TelefoneLoja`, `EnderecosLoja`, `TelefoneCliente`, `EnderecoCliente` — contatos e endereços.
+- Catálogo, login/cadastro, carrinho e telas de cliente e dono de loja.
+- URL da API configurável por `EXPO_PUBLIC_API_URL`; em desenvolvimento, o app tenta usar o host do servidor Expo.
 
-### Mobile (`mobile/`)
+### API e banco de dados
 
-- Navegação por rotas com **Expo Router** (`src/app/`).
-- **Catálogo** (`index.tsx`): lista lojas vindas da API, busca por nome, chips de categorias e botão de login.
-- **Login** (`login.tsx`): seleção Cliente/Construtora, autenticação na API e redirecionamento do dono de loja para o painel.
-- **Cadastro** (`register.tsx`): formulário dinâmico para cliente ou construtora (dados da empresa e endereço).
-- **Painel da Construtora** (`loja/dashboard.tsx`): cadastro de endereço da loja e de produtos/materiais.
-- **Painel do Administrador** (`admin/dashboard.tsx`): visão geral com total de lojas e lista de lojas ativas.
-- **Painel do Cliente** (`cliente/dashboard.tsx`): tela inicial (esqueleto).
+- API REST em `http://localhost:3000`.
+- PostgreSQL acessado pelo Prisma 7 com adapter `@prisma/adapter-pg`.
+- Migrações versionadas em `backend/prisma/migrations/`.
+- Produtos, imagens, lojas, clientes, endereços, pedidos, itens de pedido e favoritos.
 
-### Web (`src/`)
+Rotas principais: `GET /lojas`, `GET/PUT /lojas/:id`, `GET /lojas/:id/pedidos`, `GET /produtos`, `GET /produtos/:id`, `POST/PUT/DELETE /produtos`, `POST /produtos/:id/imagem`, `POST /register`, `POST /login`, `POST /pedidos`, `GET /clientes/:id/pedidos` e rotas de endereço/favoritos.
 
-- App Vite mínimo com React 19 (apenas página inicial de exemplo — ainda não implementado).
+## Requisitos
 
----
+- Node.js **22.13 ou superior** (recomendado para o Expo SDK 58).
+- PostgreSQL instalado e em execução.
+- Para o site estático: Python ou a extensão Live Server do VS Code (opcional).
 
-## Como rodar
+## Instalação do banco e da API
 
-### Pré-requisitos
+Execute os comandos Prisma a partir de `backend/`.
 
-- Node.js 20+
-- PostgreSQL acessível
+1. Clone o repositório e entre na pasta da API:
 
-### Backend
+   ```bash
+   git clone <URL-DO-REPOSITORIO> DiskObra
+   cd DiskObra/backend
+   npm ci
+   ```
+
+2. Crie um banco PostgreSQL vazio chamado `diskobra` usando pgAdmin ou `createdb diskobra`.
+
+3. Crie o arquivo local de variáveis de ambiente:
+
+   **PowerShell:**
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   **macOS/Linux:**
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edite `backend/.env` e ajuste usuário, senha, host e porta do PostgreSQL:
+
+   ```env
+   DATABASE_URL="postgresql://postgres:senha@localhost:5432/diskobra?schema=public"
+   PORT=3000
+   ```
+
+   Se a senha tiver caracteres especiais, codifique-os na URL (por exemplo, `@` como `%40`). O `.env` não deve ser enviado ao GitHub.
+
+4. Aplique as migrações incluídas no repositório e gere o Prisma Client:
+
+   ```bash
+   npm run db:validate
+   npm run db:deploy
+   npm run db:generate
+   ```
+
+5. Inicie a API:
+
+   ```bash
+   npm run dev
+   ```
+
+   A API ficará disponível em `http://localhost:3000` e registra método, rota e status das requisições no terminal.
+
+### Comandos úteis do backend
+
+| Comando | Uso |
+|---|---|
+| `npm run db:deploy` | Aplica migrações existentes sem criar um banco shadow; recomendado para configurar um clone |
+| `npm run db:migrate -- --name nome_da_migracao` | Cria/aplica uma migração durante o desenvolvimento |
+| `npm run db:generate` | Gera o Prisma Client após alterações no schema |
+| `npm run db:status` | Mostra migrações pendentes/aplicadas |
+| `npm run db:validate` | Valida o schema Prisma |
+| `npm run db:studio` | Abre o Prisma Studio |
+| `npm run db:seed` | Insere dados de demonstração; execute **uma única vez** em banco vazio |
+
+`db:deploy` não cria o banco PostgreSQL: ele precisa existir antes. Para inicializar um clone, prefira `db:deploy`; `db:migrate` é destinado a criar novas migrações durante o desenvolvimento e pode precisar de permissão para criar um banco shadow. Evite `prisma migrate reset`, pois esse comando apaga os dados do banco.
+
+### Erros comuns do Prisma ao clonar
+
+- **`DATABASE_URL` ausente:** copie `backend/.env.example` para `backend/.env` e ajuste a URL. A configuração do Prisma aponta explicitamente para esse arquivo.
+- **Banco não existe ou conexão recusada:** inicie o PostgreSQL e crie o banco `diskobra` antes de rodar `npm run db:deploy`.
+- **Senha/autenticação falhou:** confira usuário, senha, porta e codificação de caracteres especiais na URL.
+- **Migração pendente:** dentro de `backend/`, rode `npm run db:status` e depois `npm run db:deploy`.
+- **Comando executado na pasta errada:** use `cd backend` antes dos comandos `npm run db:*`. O arquivo de configuração principal é `backend/prisma.config.js`.
+
+## Executar o site HTML
+
+Com a API em execução, abra outro terminal na raiz do repositório:
 
 ```bash
-cd backend
-npm install
+python -m http.server 5500 --directory frontend
 ```
 
-Crie um arquivo `backend/.env` com a string de conexão:
+Abra `http://localhost:5500/produtos.html`. Também é possível abrir `login.html` ou `cadastro-deposito.html` diretamente. Como alternativa, use a extensão **Live Server** do VS Code.
 
-```env
-DATABASE_URL="postgresql://usuario:senha@localhost:5432/diskobra?schema=public"
-PORT=3000
-```
+O site usa o hostname da página para localizar a API na porta `3000`. Se a API estiver em outro computador, configure `window.DISKOBRA_API_URL` antes de carregar `app.js` (por exemplo, `http://192.168.1.20:3000`). Em dispositivos na rede local, libere a porta 3000 no firewall.
 
-Depois:
-
-```bash
-npm run db:migrate     # aplica as migrações
-npm run db:generate    # gera o Prisma Client
-npm run db:seed        # popula dados de exemplo
-npm run dev            # inicia a API (http://localhost:3000)
-```
-
-> Comandos Prisma também disponíveis: `db:studio`.
-
-### Mobile
+## Executar o aplicativo Expo
 
 ```bash
 cd mobile
-npm install
+npm ci
 npx expo start
 ```
 
-> A URL da API está fixa em `http://192.168.15.8:3000` nos arquivos de tela. Ajuste o IP para o da sua máquina/emulador antes de rodar.
+Para definir manualmente o endereço da API, crie `mobile/.env` com:
 
----
+```env
+EXPO_PUBLIC_API_URL=http://IP-DO-COMPUTADOR:3000
+```
 
-## Limitações e próximos passos
+Em celular físico, computador e celular devem estar na mesma rede. O `.env` do app também é local e não deve ser enviado ao GitHub.
 
-- [ ] Centralizar a URL da API em uma variável de configuração (hoje está fixa em cada tela).
-- [ ] Login redireciona apenas `DONO_LOJA`; faltam os fluxos de redirecionamento para `CLIENTE` e `ADMIN`.
-- [ ] Alinhar contratos das rotas com o app:
-  - `POST /produtos` espera `vlProdutoUnitario` e `qtProdutoEstoque`, mas o app envia `vlPreco` e `qtEstoque`.
-  - `POST /enderecos` espera `noEndereco`, `noCidade`, `sgUf`, mas o app envia `noRua`, `nrNumero`, `noBairro`, `sgEstado`, `nrCep`.
-- [ ] Hash de senha (hoje armazenada em texto puro) e autenticação por token (JWT).
-- [ ] Implementar área do cliente (pedidos, carrinho, checkout) e cadastro real de CPF.
-- [ ] Integrar o app web (`src/`) com a API.
-- [ ] Criar CRUD completo de produtos, lojas e vendas no backend.
+## Pagamentos e imagens
+
+- O checkout registra a preferência de pagar na entrega ou na retirada; não há cobrança automática. O pagamento deve ser confirmado manualmente pela loja após verificar o recebimento.
+- O WhatsApp abre com a mensagem do pedido preenchida, mas o cliente precisa confirmar o envio.
+- Imagens são armazenadas localmente em `backend/uploads/produtos/` e não são versionadas. Em produção, use armazenamento persistente ou um serviço de objetos; arquivos locais podem se perder se o servidor for recriado.
+
+## Segurança e limitações conhecidas
+
+- O protótipo ainda armazena senhas sem hash e não usa sessões/JWT. Não exponha a API publicamente sem implementar autenticação e autorização adequadas.
+- Existe um acesso administrativo de demonstração definido no código (`admin@diskobra.com` / `admin123`); remova ou substitua antes de qualquer publicação real.
+- As rotas de pagamento são simuladas; não confirmam transações bancárias.
+- O banco e a API devem ficar acessíveis pela rede usada pelo navegador/aplicativo.

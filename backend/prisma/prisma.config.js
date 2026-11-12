@@ -1,12 +1,2 @@
-import "dotenv/config";
-
-/** @type {import('prisma/config').PrismaConfig} */
-export default {
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  datasource: {
-    url: process.env.DATABASE_URL,
-  },
-};
+// Mantém compatibilidade se a CLI for executada a partir de backend/prisma.
+export { default } from "../prisma.config.js";

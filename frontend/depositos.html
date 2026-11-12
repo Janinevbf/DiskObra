@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Produtos · DiskObra</title>
+    <title>Depósitos · DiskObra</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -13,7 +13,16 @@
 <body data-area="cliente">
     <div id="hd"></div>
     <main>
-        <div class="grid" id="grid"></div>
+        <div class="dep-page-head">
+            <div>
+                <h1>Depósitos cadastrados</h1>
+                <p>Conheça os depósitos e lojas de materiais disponíveis no DiskObra.</p>
+            </div>
+            <a class="btn-or" href="cadastro-deposito.html">+ Cadastrar depósito</a>
+        </div>
+        <div class="dep-list" id="depList">
+            <p>Carregando depósitos...</p>
+        </div>
     </main>
     <script src="app.js"></script>
 </body>

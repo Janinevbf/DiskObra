@@ -38,6 +38,14 @@ export default function LoginScreen() {
         return;
       }
 
+      if (data.tipoUsuario !== 'ADMIN' && data.tipoUsuario !== tipoSelecionado) {
+        Alert.alert(
+          'Tipo de acesso incorreto',
+          `Esta conta é de ${data.tipoUsuario === 'DONO_LOJA' ? 'dono de loja' : 'cliente'}. Selecione o tipo correto para entrar.`
+        );
+        return;
+      }
+
       entrar({
         usuarioId: data.usuarioId ?? null,
         tipoUsuario: data.tipoUsuario,
@@ -49,7 +57,7 @@ export default function LoginScreen() {
 
       setDestino(
         data.tipoUsuario === 'DONO_LOJA'
-          ? '/loja'
+          ? '/loja/estoque'
           : data.tipoUsuario === 'ADMIN'
             ? '/admin/dashboard'
             : '/cliente'
@@ -64,21 +72,20 @@ export default function LoginScreen() {
       <Text style={styles.title}>DiskObra - Acesso</Text>
       <Text style={styles.subtitle}>Entre na sua conta</Text>
 
-      {/* Apenas Cliente e Construtora visíveis */}
       <View style={styles.typeContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.typeButton, tipoSelecionado === 'CLIENTE' && styles.typeSelected]}
           onPress={() => setTipoSelecionado('CLIENTE')}
         >
           <Text style={[styles.typeText, tipoSelecionado === 'CLIENTE' && styles.typeTextSelected]}>Cliente</Text>
         </TouchableOpacity>
 
-        {/* <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.typeButton, tipoSelecionado === 'DONO_LOJA' && styles.typeSelected]}
           onPress={() => setTipoSelecionado('DONO_LOJA')}
         >
-          <Text style={[styles.typeText, tipoSelecionado === 'DONO_LOJA' && styles.typeTextSelected]}>Construtora</Text>
-        </TouchableOpacity> */}
+          <Text style={[styles.typeText, tipoSelecionado === 'DONO_LOJA' && styles.typeTextSelected]}>Dono da loja</Text>
+        </TouchableOpacity>
       </View>
 
       <TextInput

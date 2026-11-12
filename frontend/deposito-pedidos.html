@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Pedidos recebidos · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="deposito">
+    <div id="hd"></div>
+    <div class="dep">
+        <h1>PEDIDOS RECEBIDOS</h1>
+        <aside class="side" id="sidebar"></aside>
+        <section class="pnl store-panel">
+            <div class="store-panel-head">
+                <div>
+                    <h2>Pedidos da sua loja</h2>
+                    <p>Confira os itens, o cliente e o endereço informado no pedido.</p>
+                </div>
+                <button class="btn-or" id="atualizarPedidos" type="button">Atualizar</button>
+            </div>
+            <p class="store-message" id="pedidosMensagem" role="status" aria-live="polite">Carregando pedidos...</p>
+            <div id="pedidosLista"></div>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>

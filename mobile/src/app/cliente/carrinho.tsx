@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
@@ -9,23 +10,38 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Linking from 'expo-linking';
 
 import { API_URL } from '../../config/api';
 import { useAuth } from '../../context/auth';
 import { useCart } from '../../context/cart';
 import { formatarPreco } from '../../utils/format';
 
-const FORMAS_PAGAMENTO = ['PIX', 'Cartão de crédito', 'Cartão de débito', 'Dinheiro'];
+interface MensagemLoja {
+  idLoja: number;
+  noLoja: string;
+  nrTelefone: string;
+  mensagem: string;
+}
+
+function normalizarWhatsApp(telefone: string) {
+  const digitos = telefone.replace(/\D/g, '');
+  if (digitos.startsWith('55') && (digitos.length === 12 || digitos.length === 13)) {
+    return digitos;
+  }
+  if (digitos.length === 10 || digitos.length === 11) return `55${digitos}`;
+  return null;
+}
 
 export default function Carrinho() {
   const { sessao } = useAuth();
   const { itens, total, alterarQuantidade, remover, limpar } = useCart();
   const [enviando, setEnviando] = useState(false);
+  const [mensagensPedido, setMensagensPedido] = useState<MensagemLoja[] | null>(null);
 
   const [noEndereco, setNoEndereco] = useState('');
   const [noCidade, setNoCidade] = useState('');
   const [sgUf, setSgUf] = useState('');
-  const [tpPagamento, setTpPagamento] = useState('PIX');
 
   useEffect(() => {
     if (!sessao?.clienteId) return;
@@ -62,6 +78,21 @@ export default function Carrinho() {
       return;
     }
 
+    const lojasSemWhatsApp = [
+      ...new Set(
+        itens
+          .filter((item) => !normalizarWhatsApp(item.nrTelefoneLoja))
+          .map((item) => item.noLoja)
+      ),
+    ];
+    if (lojasSemWhatsApp.length > 0) {
+      Alert.alert(
+        'WhatsApp da loja não cadastrado',
+        `Peça à(s) loja(s) ${lojasSemWhatsApp.join(', ')} para cadastrar um telefone com WhatsApp antes de finalizar.`
+      );
+      return;
+    }
+
     setEnviando(true);
     try {
       const response = await fetch(`${API_URL}/pedidos`, {
@@ -69,7 +100,7 @@ export default function Carrinho() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idCliente: sessao.clienteId,
-          tpPagamento,
+          tpPagamento: 'A combinar com a loja',
           noEnderecoEntrega: noEndereco.trim(),
           noCidadeEntrega: noCidade.trim(),
           sgUfEntrega: sgUf.trim().toUpperCase(),
@@ -84,19 +115,98 @@ export default function Carrinho() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Erro ao finalizar o pedido.');
 
-      limpar();
-      Alert.alert(
-        'Pedido realizado!',
-        `Entrega em ${noEndereco.trim()}, ${noCidade.trim()} - ${sgUf
-          .trim()
-          .toUpperCase()}.\nPagamento: ${tpPagamento}.`
+      const idPedido = data.venda?.idVenda;
+      if (!idPedido) throw new Error('O pedido foi criado, mas não recebemos o número dele.');
+
+      const itensPorLoja = new Map<number, typeof itens>();
+      for (const item of itens) {
+        const grupo = itensPorLoja.get(item.idLoja) ?? [];
+        grupo.push(item);
+        itensPorLoja.set(item.idLoja, grupo);
+      }
+
+      const novasMensagens: MensagemLoja[] = [...itensPorLoja.entries()].map(
+        ([idLoja, itensLoja]) => {
+          const primeiroItem = itensLoja[0];
+          const subtotalLoja = itensLoja.reduce(
+            (soma, item) => soma + item.vlProdutoUnitario * item.qtProduto,
+            0
+          );
+          const listaItens = itensLoja
+            .map(
+              (item) =>
+                `• ${item.qtProduto}x ${item.noProduto} — ${formatarPreco(item.vlProdutoUnitario * item.qtProduto)}`
+            )
+            .join('\n');
+          const mensagem = [
+            `Olá, ${primeiroItem.noLoja}! Fiz um pedido pelo DiskObra.`,
+            `Pedido #${idPedido}`,
+            `Cliente: ${sessao.nome}`,
+            '',
+            'Itens desta loja:',
+            listaItens,
+            `Total dos itens desta loja: ${formatarPreco(subtotalLoja)}`,
+            `Endereço de entrega: ${noEndereco.trim()}, ${noCidade.trim()} - ${sgUf.trim().toUpperCase()}`,
+            '',
+            'Por favor, confirme a disponibilidade e me informe as opções de pagamento, entrega, prazo e eventual taxa.',
+          ].join('\n');
+
+          return {
+            idLoja,
+            noLoja: primeiroItem.noLoja,
+            nrTelefone: normalizarWhatsApp(primeiroItem.nrTelefoneLoja)!,
+            mensagem,
+          };
+        }
       );
+
+      limpar();
+      setMensagensPedido(novasMensagens);
     } catch (error: any) {
       Alert.alert('Erro', error.message || 'Não foi possível finalizar o pedido.');
     } finally {
       setEnviando(false);
     }
   };
+
+  const abrirWhatsApp = async (loja: MensagemLoja) => {
+    try {
+      const url = `https://wa.me/${loja.nrTelefone}?text=${encodeURIComponent(loja.mensagem)}`;
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Não foi possível abrir o WhatsApp', 'Tente novamente ou confira se há um aplicativo capaz de abrir o link.');
+    }
+  };
+
+  if (mensagensPedido) {
+    return (
+      <View style={styles.confirmacaoContainer}>
+        <Text style={styles.confirmacaoIcone}>✅</Text>
+        <Text style={styles.confirmacaoTitulo}>Pedido criado!</Text>
+        <Text style={styles.confirmacaoTexto}>
+          Abra o WhatsApp de cada loja e toque em Enviar para encaminhar os itens. Pagamento e entrega serão combinados diretamente com a loja.
+        </Text>
+        <ScrollView style={styles.lojasMensagem} contentContainerStyle={styles.lojasMensagemConteudo}>
+          {mensagensPedido.map((loja) => (
+            <TouchableOpacity
+              key={loja.idLoja}
+              style={styles.whatsappButton}
+              onPress={() => abrirWhatsApp(loja)}>
+              <Text style={styles.whatsappButtonText}>Enviar pedido para {loja.noLoja} no WhatsApp</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <TouchableOpacity
+          style={styles.voltarButton}
+          onPress={() => {
+            setMensagensPedido(null);
+            router.replace('/cliente');
+          }}>
+          <Text style={styles.voltarButtonText}>Voltar ao catálogo</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (itens.length === 0) {
     return (
@@ -173,32 +283,14 @@ export default function Carrinho() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Forma de pagamento</Text>
-
-        <View style={styles.pagamentos}>
-          {FORMAS_PAGAMENTO.map((forma) => {
-            const selecionado = forma === tpPagamento;
-            return (
-              <TouchableOpacity
-                key={forma}
-                style={[styles.pagamentoChip, selecionado && styles.pagamentoChipSelected]}
-                onPress={() => setTpPagamento(forma)}>
-                <Text
-                  style={[
-                    styles.pagamentoChipText,
-                    selecionado && styles.pagamentoChipTextSelected,
-                  ]}>
-                  {forma}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <Text style={styles.pagamentoInfo}>
+          A forma de pagamento, prazo e taxa de entrega serão combinados com a loja pelo WhatsApp após o pedido.
+        </Text>
       </ScrollView>
 
       <View style={styles.footer}>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalLabel}>Subtotal dos produtos</Text>
           <Text style={styles.totalValue}>{formatarPreco(total)}</Text>
         </View>
 
@@ -266,18 +358,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
   cidadeInput: { flex: 1 },
   ufInput: { width: 80 },
-  pagamentos: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pagamentoChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  pagamentoChipSelected: { backgroundColor: '#FF5722', borderColor: '#FF5722' },
-  pagamentoChipText: { fontSize: 13, color: '#555', fontWeight: '600' },
-  pagamentoChipTextSelected: { color: '#fff' },
+  pagamentoInfo: { fontSize: 13, lineHeight: 19, color: '#666', marginTop: 4 },
   footer: {
     borderTopWidth: 1,
     borderTopColor: '#e5e5e5',
@@ -306,4 +387,14 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   emptyText: { fontSize: 14, color: '#777', marginTop: 6, textAlign: 'center' },
+  confirmacaoContainer: { flex: 1, backgroundColor: '#f8f9fa', padding: 20, paddingTop: 56 },
+  confirmacaoIcone: { fontSize: 42, textAlign: 'center', marginBottom: 10 },
+  confirmacaoTitulo: { fontSize: 22, fontWeight: 'bold', color: '#222', textAlign: 'center' },
+  confirmacaoTexto: { fontSize: 14, lineHeight: 21, color: '#666', textAlign: 'center', marginTop: 10, marginBottom: 18 },
+  lojasMensagem: { flex: 1 },
+  lojasMensagemConteudo: { gap: 10, paddingBottom: 10 },
+  whatsappButton: { backgroundColor: '#168C4A', padding: 15, borderRadius: 10, alignItems: 'center' },
+  whatsappButtonText: { color: '#fff', fontSize: 14, textAlign: 'center', fontWeight: 'bold' },
+  voltarButton: { padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center', marginTop: 4 },
+  voltarButtonText: { color: '#444', fontSize: 14, fontWeight: '600' },
 });

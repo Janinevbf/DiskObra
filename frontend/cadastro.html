@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Cadastro · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="cliente">
+    <div id="hd"></div>
+    <main class="auth">
+        <section class="box">
+            <h1>Faça seu cadastro</h1>
+            <p class="sub">Cadastre-se para ter acesso aos seus pedidos</p>
+            <form id="formCadastro" data-auth="login.html" novalidate>
+                <label class="fld">
+                    <span class="ic">👤</span>
+                    <input type="text" name="nome" placeholder="Digite seu nome completo" aria-label="Digite seu nome completo" required>
+                </label>
+                <label class="fld">
+                    <span class="ic">@</span>
+                    <input type="email" name="email" placeholder="Digite seu e-mail" aria-label="Digite seu e-mail" required>
+                </label>
+                <label class="fld">
+                    <span class="ic">👤</span>
+                    <input type="text" name="cpf" placeholder="Digite seu CPF" aria-label="Digite seu CPF" inputmode="numeric" maxlength="14">
+                </label>
+                <label class="fld">
+                    <span class="ic">📞</span>
+                    <input type="tel" name="nrTelefone" placeholder="Digite seu número de telefone" aria-label="Digite seu número de telefone">
+                </label>
+                <label class="fld">
+                    <span class="ic">🔒</span>
+                    <input type="password" name="senha" placeholder="Digite sua senha" aria-label="Digite sua senha" required>
+                </label>
+                <label class="fld">
+                    <span class="ic">🔒</span>
+                    <input type="password" name="senhaConfirma" placeholder="Digite sua senha novamente" aria-label="Digite sua senha novamente" required>
+                </label>
+                <p class="msg" role="alert"></p>
+                <button class="btn-main" type="submit">CRIAR CONTA</button>
+            </form>
+            <p class="lnk">Já possui uma conta? <a href="login.html">Login</a></p>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>

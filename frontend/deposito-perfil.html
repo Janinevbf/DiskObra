@@ -16,12 +16,23 @@
         <h1>PERFIL DO DEPÓSITO</h1>
         <aside class="side" id="sidebar"></aside>
         <section class="pnl">
-            <div class="fr"><label style="flex:2">Nome do depósito<input></label><label>Foto do logotipo<button
-                        class="up" style="margin-top:6px">🖼 Inserir imagem</button></label></div>
-            <div class="fr"><label style="flex:3">Endereço<input></label><label>Número<input></label><label>CEP<input
-                        inputmode="numeric"></label></div>
-            <div class="fr"><label>Telefone<input type="tel"></label><label style="flex:2">E-mail<input
-                        type="email"></label></div>
+            <div class="fr">
+                <label style="flex:2">Nome do depósito<input id="lojaNome"></label>
+                <label>Foto do logotipo<button class="up" style="margin-top:6px">🖼 Inserir imagem</button></label>
+            </div>
+            <div class="fr">
+                <label>CEP<input id="lojaCep" inputmode="numeric" maxlength="9" placeholder="00000-000"></label>
+                <label style="flex:3">Endereço<input id="lojaEndereco"></label>
+                <label>Número<input id="lojaNumero"></label>
+            </div>
+            <div class="fr">
+                <label style="flex:2">Cidade<input id="lojaCidade"></label>
+                <label>UF<input id="lojaUf" maxlength="2"></label>
+            </div>
+            <div class="fr">
+                <label>Telefone<input id="lojaTelefone" type="tel"></label>
+                <label style="flex:2">E-mail<input id="lojaEmail" type="email"></label>
+            </div>
             <h2 style="font-size:22px;margin:24px 0 10px">Horário de funcionamento</h2>
             <div class="fr"><label>Abre<select>
                         <option>08:00</option>
@@ -37,7 +48,7 @@
                         <option>Sim</option>
                         <option>Não</option>
                     </select></label></div>
-            <button class="btn-gr sv" data-save>Salvar</button>
+            <button class="btn-gr sv" id="salvarPerfil" data-save>Salvar</button>
         </section>
     </div>
     <script src="app.js"></script>

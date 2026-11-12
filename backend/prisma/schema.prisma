@@ -47,8 +47,10 @@ model Produto {
   noProduto        String         @db.VarChar(200)
   qtProdutoEstoque Int
   vlProdutoUnitario Float
+  dsImagem         String?        @db.VarChar(500)
   loja             Loja           @relation(fields: [idLoja], references: [idLoja])
   itensVenda       ProdutoVenda[]
+  favoritos        Favorito[]
 
   @@map("TB_PRODUTO")
 }
@@ -62,6 +64,7 @@ model Cliente {
   telefones TelefoneCliente[]
   enderecos EnderecoCliente[]
   vendas    Venda[]
+  favoritos Favorito[]
 
   @@map("TB_CLIENTE")
 }
@@ -109,6 +112,8 @@ model EnderecosLoja {
   idLoja         Int
   sgUf           String @db.Char(2)
   noEndereco     String @db.VarChar(150)
+  nrNumero       String? @db.VarChar(20)
+  nrCep          String? @db.VarChar(9)
   noCidade       String @db.VarChar(100)
   loja           Loja   @relation(fields: [idLoja], references: [idLoja])
 
@@ -129,8 +134,21 @@ model EnderecoCliente {
   idCliente         Int
   sgUf              String  @db.Char(2)
   noEndereco        String  @db.VarChar(150)
+  nrNumero          String? @db.VarChar(20)
+  nrCep             String? @db.VarChar(9)
   noCidade          String  @db.VarChar(100)
   cliente           Cliente @relation(fields: [idCliente], references: [idCliente])
 
   @@map("TB_ENDERECO_CLIENTE")
+}
+
+model Favorito {
+  idFavorito Int     @id @default(autoincrement())
+  idCliente  Int
+  cdProduto  Int
+  cliente    Cliente @relation(fields: [idCliente], references: [idCliente], onDelete: Cascade)
+  produto    Produto @relation(fields: [cdProduto], references: [cdProduto], onDelete: Cascade)
+
+  @@unique([idCliente, cdProduto])
+  @@map("TB_FAVORITO")
 }

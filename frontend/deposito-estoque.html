@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Estoque · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="deposito">
+    <div id="hd"></div>
+    <div class="dep">
+        <h1>ESTOQUE DA LOJA</h1>
+        <aside class="side" id="sidebar"></aside>
+        <section class="pnl store-panel">
+            <div class="store-panel-head">
+                <div>
+                    <h2>Produtos cadastrados</h2>
+                    <p>Atualize preços e quantidades ou remova produtos indisponíveis.</p>
+                </div>
+                <a class="btn-or" href="deposito-cadastrar-produto.html">+ Cadastrar produto</a>
+            </div>
+            <p class="store-message" id="estoqueMensagem" role="status" aria-live="polite">Carregando estoque...</p>
+            <div class="inventory-list" id="estoqueLista"></div>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>

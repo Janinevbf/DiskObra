@@ -7,6 +7,7 @@ export interface ItemCarrinho {
   qtProduto: number;
   idLoja: number;
   noLoja: string;
+  nrTelefoneLoja: string;
 }
 
 interface CartContextData {

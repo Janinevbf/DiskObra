@@ -1,0 +1,21 @@
+-- AlterTable
+ALTER TABLE "TB_ENDERECO_CLIENTE" ADD COLUMN     "nrCep" VARCHAR(9),
+ADD COLUMN     "nrNumero" VARCHAR(20);
+
+-- CreateTable
+CREATE TABLE "TB_FAVORITO" (
+    "idFavorito" SERIAL NOT NULL,
+    "idCliente" INTEGER NOT NULL,
+    "cdProduto" INTEGER NOT NULL,
+
+    CONSTRAINT "TB_FAVORITO_pkey" PRIMARY KEY ("idFavorito")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TB_FAVORITO_idCliente_cdProduto_key" ON "TB_FAVORITO"("idCliente", "cdProduto");
+
+-- AddForeignKey
+ALTER TABLE "TB_FAVORITO" ADD CONSTRAINT "TB_FAVORITO_idCliente_fkey" FOREIGN KEY ("idCliente") REFERENCES "TB_CLIENTE"("idCliente") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TB_FAVORITO" ADD CONSTRAINT "TB_FAVORITO_cdProduto_fkey" FOREIGN KEY ("cdProduto") REFERENCES "TB_PRODUTO"("cdProduto") ON DELETE CASCADE ON UPDATE CASCADE;

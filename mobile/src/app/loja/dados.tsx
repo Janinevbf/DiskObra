@@ -20,6 +20,7 @@ export default function LojaDados() {
 
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   const [noLoja, setNoLoja] = useState('');
   const [nrCnpj, setNrCnpj] = useState('');
@@ -30,9 +31,11 @@ export default function LojaDados() {
 
   const carregar = useCallback(async () => {
     if (!lojaId) {
+      setErro('Esta conta não está vinculada a uma loja. Saia e entre novamente ou confira o cadastro da loja.');
       setCarregando(false);
       return;
     }
+    setErro(null);
     try {
       const response = await fetch(`${API_URL}/lojas/${lojaId}`);
       const data = await response.json();
@@ -45,6 +48,7 @@ export default function LojaDados() {
       setNoCidade(data.enderecos?.[0]?.noCidade ?? '');
       setSgUf(data.enderecos?.[0]?.sgUf ?? '');
     } catch (error: any) {
+      setErro(error.message || 'Não foi possível conectar à API.');
       Alert.alert('Erro', error.message || 'Não foi possível carregar os dados.');
     } finally {
       setCarregando(false);
@@ -58,7 +62,10 @@ export default function LojaDados() {
   );
 
   const salvar = async () => {
-    if (!lojaId) return;
+    if (!lojaId) {
+      setErro('Esta conta não está vinculada a uma loja. Saia e entre novamente.');
+      return;
+    }
     if (!noLoja || !nrCnpj) {
       Alert.alert('Atenção', 'Nome da loja e CNPJ são obrigatórios.');
       return;
@@ -76,7 +83,9 @@ export default function LojaDados() {
       if (!response.ok) throw new Error(data.error || 'Erro ao salvar os dados.');
 
       Alert.alert('Sucesso!', 'Dados da loja atualizados.');
+      setErro(null);
     } catch (error: any) {
+      setErro(error.message || 'Não foi possível conectar à API.');
       Alert.alert('Erro', error.message || 'Não foi possível salvar os dados.');
     } finally {
       setSalvando(false);
@@ -103,6 +112,13 @@ export default function LojaDados() {
           <Text style={styles.sair}>Sair</Text>
         </TouchableOpacity>
       </View>
+
+      {erro ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{erro}</Text>
+          <Text style={styles.errorDetails}>API: {API_URL} · Loja: {lojaId ?? 'não vinculada'}</Text>
+        </View>
+      ) : null}
 
       <Text style={styles.sectionTitle}>Dados da empresa</Text>
       <TextInput style={styles.input} placeholder="Nome da loja" value={noLoja} onChangeText={setNoLoja} />
@@ -185,4 +201,7 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  errorBox: { backgroundColor: '#fff0f0', borderColor: '#e6b8b8', borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 12 },
+  errorText: { color: '#9b2525', fontSize: 13, lineHeight: 19 },
+  errorDetails: { color: '#7b5050', fontSize: 11, marginTop: 6 },
 });

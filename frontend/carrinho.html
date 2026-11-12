@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Carrinho · DiskObra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-area="cliente">
+    <div id="hd"></div>
+    <main class="cart">
+        <section class="pnl">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Preço</th>
+                        <th>Quantidade</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cart"></tbody>
+            </table>
+        </section>
+        <aside class="pnl sum checkout-summary">
+            <h2>Resumo do pedido</h2>
+            <div class="summary-row"><span>Subtotal dos produtos</span><strong id="sub"></strong></div>
+
+            <div id="secaoEntrega" class="delivery-section">
+                <div class="summary-row"><span>Frete</span><strong id="fr">A definir</strong></div>
+                <div class="summary-field cep">
+                    <label for="cep">Calcular frete pelo CEP</label>
+                    <div class="summary-inline">
+                        <input id="cep" inputmode="numeric" placeholder="00000-000">
+                        <button class="btn-or" id="calc" type="button">Calcular</button>
+                    </div>
+                </div>
+
+                <div class="summary-field end">
+                    <p class="summary-section-title">Endereço de entrega</p>
+                    <div class="delivery-grid">
+                        <input id="endEndereco" placeholder="Endereço">
+                        <input id="endNumero" placeholder="Número" inputmode="numeric">
+                        <input id="endCidade" placeholder="Cidade">
+                        <input id="endUf" placeholder="UF" maxlength="2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-field pay">
+                <label for="pagamento">Como deseja pagar?</label>
+                <select id="pagamento">
+                    <option value="entrega">Pagar na entrega</option>
+                    <option value="retirada">Pagar na retirada</option>
+                </select>
+            </div>
+            <p id="retiradaInfo" class="checkout-note" hidden>O endereço não é necessário para retirada. A loja combinará pelo WhatsApp o horário e a confirmação do pedido.</p>
+
+            <div class="summary-row summary-total"><b>Total estimado</b><strong id="tot"></strong></div>
+            <p id="checkoutFeedback" class="checkout-feedback" role="status" aria-live="polite"></p>
+            <button class="btn-gr" id="buy" type="button">Finalizar compra</button>
+            <a class="cont" href="produtos.html">Continuar comprando</a>
+        </aside>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>

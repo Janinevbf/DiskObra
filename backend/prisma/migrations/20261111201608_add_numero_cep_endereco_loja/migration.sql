@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "TB_ENDERECO_LOJA" ADD COLUMN     "nrCep" VARCHAR(9),
+ADD COLUMN     "nrNumero" VARCHAR(20);

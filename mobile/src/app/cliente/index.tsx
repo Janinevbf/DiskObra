@@ -26,6 +26,7 @@ interface Loja {
   idLoja: number;
   noLoja: string;
   nrCnpj: string;
+  telefones?: { nrTelefone: string }[];
   produtos: Produto[];
 }
 
@@ -60,6 +61,7 @@ export default function ClienteCatalogo() {
       vlProdutoUnitario: produto.vlProdutoUnitario,
       idLoja: loja.idLoja,
       noLoja: loja.noLoja,
+      nrTelefoneLoja: loja.telefones?.[0]?.nrTelefone ?? '',
     });
     Alert.alert('Adicionado ao carrinho', `${produto.noProduto} foi adicionado.`);
   };
