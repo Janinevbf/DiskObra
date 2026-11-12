@@ -135,7 +135,7 @@ const nav2Label = document.body.dataset.nav2 || 'MEU CARRINHO';
 const nav2Href = document.body.dataset.nav2Url || (document.body.dataset.nav2 ? 'conta.html#pedidos' : 'carrinho.html');
 const nav = dep ? [['MINHA LOJA', 'deposito-perfil.html'], ['ESTOQUE', 'deposito-estoque.html'], ['PEDIDOS', 'deposito-pedidos.html']]
     : [['PRODUTOS', 'produtos.html'], [nav2Label, nav2Href], ['DEPÓSITOS', 'depositos.html']];
-$('#hd').outerHTML = `<header class="hd"><a class="logo" href="produtos.html">DISK<b></b>BRA</a>
+$('#hd').outerHTML = `<header class="hd"><a class="logo" href="produtos.html" ><img src="img/LogotipoDiskObra.png"</a>
 <nav>${nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}</nav>
 <form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)"><input name="q" placeholder="Busque o que procura aqui...." aria-label="Buscar"><button aria-label="Buscar">🔍</button></form>
 <a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta">👤</a>${dep ? '<a class="logout" href="login.html" data-logout>Sair</a>' : ''}</header>`;
