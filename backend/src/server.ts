@@ -31,6 +31,10 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+class EstoqueIndisponivelError extends Error {
+  statusCode = 409;
+}
+
 // Rota de Teste: Listar Lojas
 app.get("/lojas", async (req, res) => {
   try {
@@ -199,6 +203,7 @@ app.get("/lojas/:id/pedidos", async (req, res) => {
       where: { produtos: { some: { produto: { idLoja: id } } } },
       orderBy: { idVenda: "desc" },
       include: {
+        statusLojas: { where: { idLoja: id } },
         cliente: {
           include: {
             usuario: { select: { noEmail: true } },
@@ -216,6 +221,64 @@ app.get("/lojas/:id/pedidos", async (req, res) => {
   } catch (error) {
     console.error("Erro ao buscar pedidos da loja:", error);
     return res.status(500).json({ error: "Erro ao buscar pedidos da loja." });
+  }
+});
+
+// Atualizar o andamento de um pedido por uma loja participante
+app.patch("/pedidos/:id/status", async (req, res) => {
+  try {
+    const idVenda = Number(req.params.id);
+    const idLoja = Number(req.body?.idLoja);
+    const tpStatusPedido = String(req.body?.tpStatusPedido ?? "").trim().toUpperCase();
+    const dsMotivoNegado = String(req.body?.dsMotivoNegado ?? "").trim();
+    const statusPermitidos = ["PENDENTE", "ENTREGUE", "RETIRADO", "NEGADO"];
+
+    if (!Number.isInteger(idVenda) || idVenda <= 0 || !Number.isInteger(idLoja) || idLoja <= 0) {
+      return res.status(400).json({ error: "Pedido ou loja inválidos." });
+    }
+    if (!statusPermitidos.includes(tpStatusPedido)) {
+      return res.status(400).json({ error: "Escolha um status válido para o pedido." });
+    }
+    if (tpStatusPedido === "NEGADO" && !dsMotivoNegado) {
+      return res.status(400).json({ error: "Informe o motivo para negar o pedido." });
+    }
+    if (dsMotivoNegado.length > 255) {
+      return res.status(400).json({ error: "O motivo deve ter no máximo 255 caracteres." });
+    }
+
+    const venda = await prisma.venda.findUnique({
+      where: { idVenda },
+      include: { produtos: { include: { produto: { select: { idLoja: true } } } } },
+    });
+
+    if (!venda) {
+      return res.status(404).json({ error: "Pedido não encontrado." });
+    }
+
+    const pertenceALoja = venda.produtos.some(item => item.produto.idLoja === idLoja);
+    if (!pertenceALoja) {
+      return res.status(403).json({ error: "Este pedido não contém produtos da sua loja." });
+    }
+
+    const atualizado = await prisma.statusPedidoLoja.upsert({
+      where: { idVenda_idLoja: { idVenda, idLoja } },
+      update: {
+        tpStatusPedido,
+        dsMotivoNegado: tpStatusPedido === "NEGADO" ? dsMotivoNegado : null,
+        dhAtualizacao: new Date(),
+      },
+      create: {
+        idVenda,
+        idLoja,
+        tpStatusPedido,
+        dsMotivoNegado: tpStatusPedido === "NEGADO" ? dsMotivoNegado : null,
+      },
+    });
+
+    return res.json({ message: "Status do pedido atualizado.", status: atualizado });
+  } catch (error) {
+    console.error("Erro ao atualizar status do pedido:", error);
+    return res.status(500).json({ error: "Não foi possível atualizar o status do pedido." });
   }
 });
 
@@ -376,7 +439,13 @@ app.put("/produtos/:id", async (req, res) => {
 
     if (noProduto !== undefined) data.noProduto = noProduto;
     if (vlProdutoUnitario !== undefined) data.vlProdutoUnitario = parseFloat(vlProdutoUnitario);
-    if (qtProdutoEstoque !== undefined) data.qtProdutoEstoque = parseInt(qtProdutoEstoque);
+    if (qtProdutoEstoque !== undefined) {
+      const estoque = Number(qtProdutoEstoque);
+      if (!Number.isInteger(estoque) || estoque < 0) {
+        return res.status(400).json({ error: "O estoque deve ser um número inteiro igual ou maior que zero." });
+      }
+      data.qtProdutoEstoque = estoque;
+    }
 
     const produto = await prisma.produto.update({
       where: { cdProduto: id },
@@ -470,6 +539,7 @@ app.get("/clientes/:id/pedidos", async (req, res) => {
         produtos: {
           include: { produto: { select: { noProduto: true } } },
         },
+        statusLojas: { include: { loja: { select: { noLoja: true } } } },
       },
     });
 
@@ -732,8 +802,18 @@ app.post("/pedidos", async (req, res) => {
       sgUfEntrega,
     } = req.body;
 
-    if (!idCliente || !Array.isArray(itens) || itens.length === 0) {
+    if (!Number.isInteger(Number(idCliente)) || Number(idCliente) <= 0 || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({ error: "Cliente e itens do pedido são obrigatórios." });
+    }
+
+    const quantidades = new Map<number, number>();
+    for (const item of itens) {
+      const cdProduto = Number(item?.cdProduto);
+      const quantidade = Number(item?.qtProdutoRetirado);
+      if (!Number.isInteger(cdProduto) || cdProduto <= 0 || !Number.isInteger(quantidade) || quantidade <= 0) {
+        return res.status(400).json({ error: "Há um produto ou quantidade inválida no pedido." });
+      }
+      quantidades.set(cdProduto, (quantidades.get(cdProduto) || 0) + quantidade);
     }
 
     const formaPagamento = String(tpPagamento ?? "").trim();
@@ -753,12 +833,57 @@ app.post("/pedidos", async (req, res) => {
     const uf = retirada ? "" : String(sgUfEntrega).trim().toUpperCase().slice(0, 2);
     const enderecoCompleto = numero ? `${endereco}, ${numero}` : endereco;
 
-    const total = itens.reduce(
-      (soma: number, item: any) => soma + Number(item.vlTotalProduto),
-      0
-    );
+    const resultado = await prisma.$transaction(async (tx) => {
+      const idsProdutos = [...quantidades.keys()].sort((a, b) => a - b);
+      const produtos = await tx.produto.findMany({ where: { cdProduto: { in: idsProdutos } } });
+      const produtosPorId = new Map(produtos.map(produto => [produto.cdProduto, produto]));
 
-    const venda = await prisma.$transaction(async (tx) => {
+      for (const cdProduto of idsProdutos) {
+        const produto = produtosPorId.get(cdProduto);
+        const quantidade = quantidades.get(cdProduto)!;
+        if (!produto) {
+          throw new EstoqueIndisponivelError(`Um produto do carrinho não está mais disponível. Atualize a página e tente novamente.`);
+        }
+        if (produto.qtProdutoEstoque < quantidade) {
+          throw new EstoqueIndisponivelError(
+            `${produto.noProduto} está indisponível para essa quantidade. Estoque atual: ${produto.qtProdutoEstoque}.`
+          );
+        }
+
+        // Atualização condicional impede que duas compras simultâneas vendam a mesma unidade.
+        const atualizado = await tx.produto.updateMany({
+          where: { cdProduto, qtProdutoEstoque: { gte: quantidade } },
+          data: { qtProdutoEstoque: { decrement: quantidade } },
+        });
+        if (atualizado.count !== 1) {
+          const estoqueAtual = await tx.produto.findUnique({
+            where: { cdProduto },
+            select: { noProduto: true, qtProdutoEstoque: true },
+          });
+          throw new EstoqueIndisponivelError(
+            `${estoqueAtual?.noProduto || produto.noProduto} acabou ou não tem unidades suficientes. Estoque atual: ${estoqueAtual?.qtProdutoEstoque ?? 0}.`
+          );
+        }
+      }
+
+      const itensPedido = idsProdutos.map(cdProduto => {
+        const produto = produtosPorId.get(cdProduto)!;
+        const quantidade = quantidades.get(cdProduto)!;
+        return {
+          cdProduto,
+          qtProdutoRetirado: quantidade,
+          vlTotalProduto: produto.vlProdutoUnitario * quantidade,
+        };
+      });
+      const total = itensPedido.reduce((soma, item) => soma + item.vlTotalProduto, 0);
+      const produtosDoPedido = await tx.produto.findMany({
+        where: { cdProduto: { in: idsProdutos } },
+        select: { cdProduto: true, noProduto: true, idLoja: true, qtProdutoEstoque: true },
+      });
+      const estoqueEsgotado = produtosDoPedido
+        .filter(produto => produto.qtProdutoEstoque === 0)
+        .map(({ cdProduto, noProduto, idLoja }) => ({ cdProduto, noProduto, idLoja }));
+
       const novaVenda = await tx.venda.create({
         data: {
           idCliente: clienteId,
@@ -769,20 +894,20 @@ app.post("/pedidos", async (req, res) => {
           noCidadeEntrega: cidade || null,
           sgUfEntrega: uf || null,
           produtos: {
-            create: itens.map((item: any) => ({
-              cdProduto: Number(item.cdProduto),
-              qtProdutoRetirado: Number(item.qtProdutoRetirado),
-              vlTotalProduto: Number(item.vlTotalProduto),
+            create: itensPedido.map(item => ({
+              cdProduto: item.cdProduto,
+              qtProdutoRetirado: item.qtProdutoRetirado,
+              vlTotalProduto: item.vlTotalProduto,
             })),
           },
         },
         include: { produtos: true },
       });
 
-      for (const item of itens) {
-        await tx.produto.update({
-          where: { cdProduto: Number(item.cdProduto) },
-          data: { qtProdutoEstoque: { decrement: Number(item.qtProdutoRetirado) } },
+      const lojasDoPedido = [...new Set(produtosDoPedido.map(produto => produto.idLoja))];
+      if (lojasDoPedido.length) {
+        await tx.statusPedidoLoja.createMany({
+          data: lojasDoPedido.map(idLoja => ({ idVenda: novaVenda.idVenda, idLoja })),
         });
       }
 
@@ -816,11 +941,14 @@ app.post("/pedidos", async (req, res) => {
         }
       }
 
-      return novaVenda;
+      return { venda: novaVenda, estoqueEsgotado };
     });
 
-    return res.status(201).json({ message: "Pedido realizado com sucesso!", venda });
+    return res.status(201).json({ message: "Pedido realizado com sucesso!", ...resultado });
   } catch (error: any) {
+    if (error instanceof EstoqueIndisponivelError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("Erro ao criar pedido:", error);
     return res.status(500).json({ error: error.message || "Erro ao criar pedido." });
   }

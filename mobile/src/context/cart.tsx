@@ -5,6 +5,7 @@ export interface ItemCarrinho {
   noProduto: string;
   vlProdutoUnitario: number;
   qtProduto: number;
+  qtProdutoEstoque: number;
   idLoja: number;
   noLoja: string;
   nrTelefoneLoja: string;
@@ -12,8 +13,8 @@ export interface ItemCarrinho {
 
 interface CartContextData {
   itens: ItemCarrinho[];
-  adicionar: (item: Omit<ItemCarrinho, 'qtProduto'>, quantidade?: number) => void;
-  alterarQuantidade: (cdProduto: number, quantidade: number) => void;
+  adicionar: (item: Omit<ItemCarrinho, 'qtProduto'>, quantidade?: number) => boolean;
+  alterarQuantidade: (cdProduto: number, quantidade: number) => boolean;
   remover: (cdProduto: number) => void;
   limpar: () => void;
   total: number;
@@ -36,26 +37,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       itens,
       total,
       quantidadeTotal,
-      adicionar: (item, quantidade = 1) =>
+      adicionar: (item, quantidade = 1) => {
+        const existente = itens.find((i) => i.cdProduto === item.cdProduto);
+        const novaQuantidade = (existente?.qtProduto ?? 0) + quantidade;
+        if (
+          !Number.isInteger(item.qtProdutoEstoque) ||
+          item.qtProdutoEstoque <= 0 ||
+          !Number.isInteger(quantidade) ||
+          quantidade <= 0 ||
+          novaQuantidade > item.qtProdutoEstoque
+        ) {
+          return false;
+        }
+
         setItens((atuais) => {
-          const existente = atuais.find((i) => i.cdProduto === item.cdProduto);
           if (existente) {
             return atuais.map((i) =>
               i.cdProduto === item.cdProduto
-                ? { ...i, qtProduto: i.qtProduto + quantidade }
+                ? { ...i, ...item, qtProduto: i.qtProduto + quantidade }
                 : i
             );
           }
           return [...atuais, { ...item, qtProduto: quantidade }];
-        }),
-      alterarQuantidade: (cdProduto, quantidade) =>
+        });
+        return true;
+      },
+      alterarQuantidade: (cdProduto, quantidade) => {
+        const item = itens.find((i) => i.cdProduto === cdProduto);
+        if (quantidade > 0 && item && quantidade > item.qtProdutoEstoque) return false;
         setItens((atuais) =>
           quantidade <= 0
             ? atuais.filter((i) => i.cdProduto !== cdProduto)
             : atuais.map((i) =>
                 i.cdProduto === cdProduto ? { ...i, qtProduto: quantidade } : i
               )
-        ),
+        );
+        return true;
+      },
       remover: (cdProduto) =>
         setItens((atuais) => atuais.filter((i) => i.cdProduto !== cdProduto)),
       limpar: () => setItens([]),

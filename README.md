@@ -19,7 +19,7 @@ Marketplace de materiais de construção que conecta clientes e lojas. O reposit
 
 - Catálogo, busca, detalhes dos produtos, depósitos, carrinho, conta, pedidos e favoritos.
 - Cadastro/login de clientes e donos de loja.
-- Painel da loja com perfil, cadastro/edição/exclusão de produtos, estoque e pedidos recebidos.
+- Painel da loja com perfil, cadastro/edição/exclusão de produtos, estoque e pedidos recebidos. O dono pode atualizar cada pedido para **Entregue**, **Retirado** ou **Negado**, registrando o motivo da negativa.
 - Upload de uma imagem principal por produto (JPG, PNG ou WEBP); a imagem é reduzida no navegador e guardada em `backend/uploads/produtos/`.
 - No checkout, o cliente escolhe **pagar na entrega** ou **pagar na retirada**. O site prepara uma mensagem por loja no WhatsApp; o cliente precisa abrir o link e tocar em **Enviar**.
 
@@ -33,6 +33,7 @@ Marketplace de materiais de construção que conecta clientes e lojas. O reposit
 - API REST em `http://localhost:3000`.
 - PostgreSQL acessado pelo Prisma 7 com adapter `@prisma/adapter-pg`.
 - Migrações versionadas em `backend/prisma/migrations/`.
+- Andamento do pedido armazenado por loja, inclusive quando um pedido contém itens de mais de uma loja.
 - Produtos, imagens, lojas, clientes, endereços, pedidos, itens de pedido e favoritos.
 
 Rotas principais: `GET /lojas`, `GET/PUT /lojas/:id`, `GET /lojas/:id/pedidos`, `GET /produtos`, `GET /produtos/:id`, `POST/PUT/DELETE /produtos`, `POST /produtos/:id/imagem`, `POST /register`, `POST /login`, `POST /pedidos`, `GET /clientes/:id/pedidos` e rotas de endereço/favoritos.

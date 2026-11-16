@@ -32,18 +32,42 @@ interface Loja {
 
 export default function ClienteCatalogo() {
   const { sessao } = useAuth();
-  const { adicionar } = useCart();
+  const { adicionar, itens } = useCart();
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [busca, setBusca] = useState('');
   const [loading, setLoading] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState('');
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
+    let ativo = true;
+    setLoading(true);
+    setErroCarregamento('');
+
     fetch(`${API_URL}/lojas`)
-      .then((res) => res.json())
-      .then((data) => setLojas(Array.isArray(data) ? data : []))
-      .catch((err) => console.error('Erro ao carregar catálogo:', err))
-      .finally(() => setLoading(false));
-  }, []);
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Não foi possível carregar as lojas.');
+        return data;
+      })
+      .then((data) => {
+        if (ativo) setLojas(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar catálogo:', err);
+        if (ativo) {
+          setLojas([]);
+          setErroCarregamento(`Não foi possível carregar os produtos. Verifique se o servidor está ativo em ${API_URL} e tente novamente.`);
+        }
+      })
+      .finally(() => {
+        if (ativo) setLoading(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [tentativa]);
 
   const termo = busca.trim().toLowerCase();
   const lojasFiltradas = lojas.filter((loja) => {
@@ -55,15 +79,24 @@ export default function ClienteCatalogo() {
   });
 
   const handleAdicionar = (loja: Loja, produto: Produto) => {
-    adicionar({
+    const adicionado = adicionar({
       cdProduto: produto.cdProduto,
       noProduto: produto.noProduto,
       vlProdutoUnitario: produto.vlProdutoUnitario,
+      qtProdutoEstoque: Number(produto.qtProdutoEstoque),
       idLoja: loja.idLoja,
       noLoja: loja.noLoja,
       nrTelefoneLoja: loja.telefones?.[0]?.nrTelefone ?? '',
     });
-    Alert.alert('Adicionado ao carrinho', `${produto.noProduto} foi adicionado.`);
+    if (adicionado) {
+      Alert.alert('Adicionado ao carrinho', `${produto.noProduto} foi adicionado.`);
+    } else {
+      const existente = itens.find((item) => item.cdProduto === produto.cdProduto);
+      Alert.alert(
+        'Estoque insuficiente',
+        `Há somente ${produto.qtProdutoEstoque} unidade(s) de ${produto.noProduto} disponível(is).${existente ? ` Você já tem ${existente.qtProduto} no carrinho.` : ''}`
+      );
+    }
   };
 
   return (
@@ -83,6 +116,13 @@ export default function ClienteCatalogo() {
 
       {loading ? (
         <ActivityIndicator size="large" color="#FF5722" style={{ marginTop: 40 }} />
+      ) : erroCarregamento ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{erroCarregamento}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => setTentativa((valor) => valor + 1)}>
+            <Text style={styles.retryButtonText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
@@ -110,8 +150,10 @@ export default function ClienteCatalogo() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.produtoNome}>{produto.noProduto}</Text>
                         <Text style={styles.produtoInfo}>
-                          {formatarPreco(produto.vlProdutoUnitario)} • estoque{' '}
-                          {produto.qtProdutoEstoque}
+                          {formatarPreco(produto.vlProdutoUnitario)} •{' '}
+                          {produto.qtProdutoEstoque > 0
+                            ? `Estoque: ${produto.qtProdutoEstoque}`
+                            : 'Produto indisponível'}
                         </Text>
                       </View>
                       <TouchableOpacity
@@ -194,4 +236,8 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: { backgroundColor: '#ccc' },
   addButtonText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
+  errorBox: { backgroundColor: '#fff0f0', borderColor: '#e6b8b8', borderWidth: 1, borderRadius: 8, padding: 14, marginTop: 20 },
+  errorText: { color: '#8b2020', fontSize: 14, lineHeight: 20 },
+  retryButton: { alignSelf: 'flex-start', marginTop: 12, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#FF5722', borderRadius: 8 },
+  retryButtonText: { color: '#fff', fontWeight: 'bold' },
 });

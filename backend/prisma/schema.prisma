@@ -37,6 +37,7 @@ model Loja {
   produtos   Produto[]
   telefones  TelefoneLoja[]
   enderecos  EnderecosLoja[]
+  statusPedidos StatusPedidoLoja[]
 
   @@map("TB_LOJA")
 }
@@ -76,14 +77,31 @@ model Venda {
   dhPagamento       DateTime?
   vlTotalVenda      Float
   icPago            Int
+  tpStatusPedido    String         @default("PENDENTE") @db.VarChar(20)
+  dsMotivoNegado    String?        @db.VarChar(255)
   tpPagamento       String?        @db.VarChar(50)
   noEnderecoEntrega String?        @db.VarChar(150)
   noCidadeEntrega   String?        @db.VarChar(100)
   sgUfEntrega       String?        @db.Char(2)
   cliente           Cliente        @relation(fields: [idCliente], references: [idCliente])
   produtos          ProdutoVenda[]
+  statusLojas       StatusPedidoLoja[]
 
   @@map("TB_VENDA")
+}
+
+model StatusPedidoLoja {
+  idStatusPedidoLoja Int      @id @default(autoincrement())
+  idVenda            Int
+  idLoja             Int
+  tpStatusPedido     String   @default("PENDENTE") @db.VarChar(20)
+  dsMotivoNegado     String?  @db.VarChar(255)
+  dhAtualizacao      DateTime @default(now())
+  venda              Venda    @relation(fields: [idVenda], references: [idVenda], onDelete: Cascade)
+  loja               Loja     @relation(fields: [idLoja], references: [idLoja], onDelete: Cascade)
+
+  @@unique([idVenda, idLoja])
+  @@map("TB_STATUS_PEDIDO_LOJA")
 }
 
 model ProdutoVenda {

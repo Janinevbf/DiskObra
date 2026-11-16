@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "TB_VENDA" ADD COLUMN     "dsMotivoNegado" VARCHAR(255),
+ADD COLUMN     "tpStatusPedido" VARCHAR(20) NOT NULL DEFAULT 'PENDENTE';

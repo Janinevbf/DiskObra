@@ -296,6 +296,32 @@ main {
     cursor: pointer
 }
 
+.btn-or:disabled {
+    background: #89939d;
+    cursor: not-allowed;
+    opacity: .85
+}
+
+.stock-status {
+    display: block;
+    padding: 0 12px;
+    color: #24713a;
+    font-size: 13px;
+    font-weight: 700
+}
+
+.stock-status.unavailable,
+.stock-alert {
+    color: #a51f1f
+}
+
+.stock-alert {
+    padding: 10px 12px;
+    background: #fff0f0;
+    border: 1px solid #e4aaaa;
+    border-radius: 8px
+}
+
 .pc .btn-or {
     margin: 8px 0 0;
     width: 100%
@@ -826,7 +852,77 @@ main {
 }
 
 .order-card .top {
-    align-items: center
+    align-items: center;
+    flex-wrap: wrap
+}
+
+.order-state {
+    font-size: 14px;
+    padding: 6px 12px
+}
+
+.order-state-pendente {
+    color: #735400;
+    background: #fff0bd
+}
+
+.order-state-entregue,
+.order-state-retirado {
+    color: #155c31;
+    background: #d9f2df
+}
+
+.order-state-negado {
+    color: #8b2020;
+    background: #ffe0e0
+}
+
+.order-actions {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.4fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 14px;
+    background: #f4f6f8;
+    border: 1px solid #d8e0e8;
+    border-radius: 10px
+}
+
+.order-status-field,
+.order-reason-field {
+    display: grid;
+    gap: 6px;
+    color: #333;
+    font-size: 13px;
+    font-weight: 700
+}
+
+.order-status-field select,
+.order-reason-field input {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1px solid #aab6c2;
+    border-radius: 7px;
+    background: #fff;
+    font: inherit;
+    font-weight: 400
+}
+
+.order-actions .btn-or {
+    min-height: 42px;
+    white-space: nowrap;
+    font-size: 14px
+}
+
+.order-action-message {
+    grid-column: 1 / -1;
+    font-size: 13px
+}
+
+.order-action-message.error {
+    color: #a51f1f
 }
 
 .product-image-preview {
@@ -1190,6 +1286,14 @@ main {
     .inventory-item {
         align-items: flex-start;
         flex-direction: column
+    }
+
+    .order-actions {
+        grid-template-columns: 1fr
+    }
+
+    .order-action-message {
+        grid-column: auto
     }
 
     .checkout-summary {

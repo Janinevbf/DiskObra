@@ -71,7 +71,7 @@ async function main() {
   });
 
   // 4. Registrar uma Venda de Exemplo
-  await prisma.venda.create({
+  const venda = await prisma.venda.create({
     data: {
       idCliente: cliente.idCliente,
       vlTotalVenda: 1057.80,
@@ -96,6 +96,10 @@ async function main() {
         ],
       },
     },
+  });
+
+  await prisma.statusPedidoLoja.create({
+    data: { idVenda: venda.idVenda, idLoja: loja.idLoja },
   });
 
   console.log(" Dados de teste inseridos com sucesso!");

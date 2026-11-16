@@ -38,6 +38,7 @@ export default function Carrinho() {
   const { itens, total, alterarQuantidade, remover, limpar } = useCart();
   const [enviando, setEnviando] = useState(false);
   const [mensagensPedido, setMensagensPedido] = useState<MensagemLoja[] | null>(null);
+  const [produtosEsgotados, setProdutosEsgotados] = useState<string[]>([]);
 
   const [noEndereco, setNoEndereco] = useState('');
   const [noCidade, setNoCidade] = useState('');
@@ -113,10 +114,17 @@ export default function Carrinho() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Erro ao finalizar o pedido.');
+      if (!response.ok) {
+        const erro = new Error(data.error || 'Erro ao finalizar o pedido.') as Error & { statusCode?: number };
+        erro.statusCode = response.status;
+        throw erro;
+      }
 
       const idPedido = data.venda?.idVenda;
       if (!idPedido) throw new Error('O pedido foi criado, mas não recebemos o número dele.');
+      const estoqueEsgotado: { cdProduto: number; noProduto: string; idLoja: number }[] =
+        Array.isArray(data.estoqueEsgotado) ? data.estoqueEsgotado : [];
+      setProdutosEsgotados(estoqueEsgotado.map((produto) => produto.noProduto));
 
       const itensPorLoja = new Map<number, typeof itens>();
       for (const item of itens) {
@@ -138,6 +146,9 @@ export default function Carrinho() {
                 `• ${item.qtProduto}x ${item.noProduto} — ${formatarPreco(item.vlProdutoUnitario * item.qtProduto)}`
             )
             .join('\n');
+          const produtosEsgotadosDaLoja = estoqueEsgotado
+            .filter((produto) => produto.idLoja === idLoja)
+            .map((produto) => produto.noProduto);
           const mensagem = [
             `Olá, ${primeiroItem.noLoja}! Fiz um pedido pelo DiskObra.`,
             `Pedido #${idPedido}`,
@@ -146,6 +157,9 @@ export default function Carrinho() {
             'Itens desta loja:',
             listaItens,
             `Total dos itens desta loja: ${formatarPreco(subtotalLoja)}`,
+            ...(produtosEsgotadosDaLoja.length
+              ? ['', `⚠️ AVISO: estoque zerado para ${produtosEsgotadosDaLoja.join(', ')}. Favor repor quando possível.`]
+              : []),
             `Endereço de entrega: ${noEndereco.trim()}, ${noCidade.trim()} - ${sgUf.trim().toUpperCase()}`,
             '',
             'Por favor, confirme a disponibilidade e me informe as opções de pagamento, entrega, prazo e eventual taxa.',
@@ -163,7 +177,10 @@ export default function Carrinho() {
       limpar();
       setMensagensPedido(novasMensagens);
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível finalizar o pedido.');
+      Alert.alert(
+        error.statusCode === 409 ? 'Produto indisponível' : 'Erro',
+        error.message || 'Não foi possível finalizar o pedido.'
+      );
     } finally {
       setEnviando(false);
     }
@@ -186,6 +203,11 @@ export default function Carrinho() {
         <Text style={styles.confirmacaoTexto}>
           Abra o WhatsApp de cada loja e toque em Enviar para encaminhar os itens. Pagamento e entrega serão combinados diretamente com a loja.
         </Text>
+        {produtosEsgotados.length > 0 ? (
+          <Text style={styles.stockAlert}>
+            Atenção: o estoque de {produtosEsgotados.join(', ')} zerou. A mensagem do WhatsApp avisará a loja; toque em Enviar para notificá-la.
+          </Text>
+        ) : null}
         <ScrollView style={styles.lojasMensagem} contentContainerStyle={styles.lojasMensagemConteudo}>
           {mensagensPedido.map((loja) => (
             <TouchableOpacity
@@ -242,7 +264,14 @@ export default function Carrinho() {
               <Text style={styles.qtyText}>{item.qtProduto}</Text>
               <TouchableOpacity
                 style={styles.qtyButton}
-                onPress={() => alterarQuantidade(item.cdProduto, item.qtProduto + 1)}>
+                onPress={() => {
+                  if (!alterarQuantidade(item.cdProduto, item.qtProduto + 1)) {
+                    Alert.alert(
+                      'Limite de estoque',
+                      `Há somente ${item.qtProdutoEstoque} unidade(s) disponível(is) de ${item.noProduto}.`
+                    );
+                  }
+                }}>
                 <Text style={styles.qtyButtonText}>+</Text>
               </TouchableOpacity>
             </View>
@@ -391,6 +420,7 @@ const styles = StyleSheet.create({
   confirmacaoIcone: { fontSize: 42, textAlign: 'center', marginBottom: 10 },
   confirmacaoTitulo: { fontSize: 22, fontWeight: 'bold', color: '#222', textAlign: 'center' },
   confirmacaoTexto: { fontSize: 14, lineHeight: 21, color: '#666', textAlign: 'center', marginTop: 10, marginBottom: 18 },
+  stockAlert: { fontSize: 14, lineHeight: 20, color: '#8b2020', textAlign: 'center', backgroundColor: '#fff0f0', borderColor: '#e6b8b8', borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 14 },
   lojasMensagem: { flex: 1 },
   lojasMensagemConteudo: { gap: 10, paddingBottom: 10 },
   whatsappButton: { backgroundColor: '#168C4A', padding: 15, borderRadius: 10, alignItems: 'center' },

@@ -63,21 +63,29 @@ const setCart = cart => localStorage.setItem(CART_KEY, JSON.stringify(cart));
 const addToCart = (produto, qtd = 1) => {
     const cart = getCart();
     const item = cart.find(i => Number(i.cdProduto) === Number(produto.cdProduto));
+    const estoqueDisponivel = Number(produto.qtProdutoEstoque);
+    const quantidadeNoCarrinho = (item?.qtProdutoRetirado || 0) + qtd;
+    if (!Number.isInteger(estoqueDisponivel) || estoqueDisponivel <= 0 || quantidadeNoCarrinho > estoqueDisponivel) {
+        return false;
+    }
     if (item) {
         item.qtProdutoRetirado += qtd;
         item.dsImagem = produto.dsImagem || item.dsImagem || null;
+        item.qtProdutoEstoque = Number(produto.qtProdutoEstoque);
     } else {
         cart.push({
             cdProduto: Number(produto.cdProduto),
             noProduto: produto.noProduto,
             vlProdutoUnitario: Number(produto.vlProdutoUnitario),
             qtProdutoRetirado: qtd,
+            qtProdutoEstoque: Number(produto.qtProdutoEstoque),
             idLoja: produto.idLoja,
             noLoja: produto.loja?.noLoja || '',
             dsImagem: produto.dsImagem || null
         });
     }
     setCart(cart);
+    return true;
 };
 
 const produtosCache = new Map();
@@ -175,13 +183,15 @@ if (g) {
         g.innerHTML = lista.length ? lista.map(p => {
             produtosCache.set(Number(p.cdProduto), p);
             const fav = favoritos.has(Number(p.cdProduto));
+            const disponivel = Number(p.qtProdutoEstoque) > 0;
             return `<article class="pc">
                 <a class="img" href="produto.html?id=${p.cdProduto}">${imagemProdutoHtml(p)}</a>
                 <div class="pc-top"><h3>${p.noProduto}</h3><button class="fav ${fav ? 'on' : ''}" data-fav="${p.cdProduto}" aria-label="Favoritar">${fav ? '♥' : '♡'}</button></div>
                 <small class="loja">${p.loja?.noLoja || ''}</small>
                 <div class="stars">${stars(4)}</div>
                 <div class="pr">${fmt(Number(p.vlProdutoUnitario))}</div>
-                <button class="btn-or" data-add="${p.cdProduto}">Adicionar ao carrinho</button>
+                <small class="stock-status ${disponivel ? '' : 'unavailable'}">${disponivel ? `${Number(p.qtProdutoEstoque)} unidade(s) disponível(is)` : 'Produto indisponível'}</small>
+                <button class="btn-or" data-add="${p.cdProduto}" ${disponivel ? '' : 'disabled'}>${disponivel ? 'Adicionar ao carrinho' : 'Indisponível'}</button>
             </article>`;
         }).join('') : '<p>Nenhum produto encontrado. Tente outro termo.</p>';
     };
@@ -218,9 +228,14 @@ if ($('.det') && !g) {
                 $('#detImg').innerHTML = imagemProdutoHtml(p, 'detail-product-image');
                 $('#detTitle').textContent = p.noProduto;
                 $('#detPrice').textContent = fmt(Number(p.vlProdutoUnitario));
-                $('#detInfo').innerHTML = `<b>Loja:</b> ${p.loja?.noLoja || 'Não informada'}<br><b>Estoque:</b> ${p.qtProdutoEstoque} unidade(s)`;
+                const disponivel = Number(p.qtProdutoEstoque) > 0;
+                $('#detInfo').innerHTML = `<b>Loja:</b> ${p.loja?.noLoja || 'Não informada'}<br><b>Estoque:</b> ${disponivel ? `${p.qtProdutoEstoque} unidade(s)` : '<span class="stock-status unavailable">Produto indisponível</span>'}`;
                 const add = $('.det [data-add]');
-                if (add) add.dataset.add = p.cdProduto;
+                if (add) {
+                    add.dataset.add = p.cdProduto;
+                    add.disabled = !disponivel;
+                    add.textContent = disponivel ? 'Adicionar ao carrinho' : 'Indisponível';
+                }
                 document.title = p.noProduto + ' · DiskObra';
 
                 const favBtn = $('#detFav');
@@ -254,7 +269,12 @@ document.addEventListener('click', async e => {
         if (!id && produtoDetalhe) id = Number(produtoDetalhe.cdProduto);
         const produto = produtosCache.get(id) || (produtoDetalhe && Number(produtoDetalhe.cdProduto) === id ? produtoDetalhe : null);
         if (produto) {
-            addToCart(produto);
+            if (!addToCart(produto)) {
+                alert(Number(produto.qtProdutoEstoque) > 0
+                    ? `Há somente ${produto.qtProdutoEstoque} unidade(s) disponível(is) deste produto.`
+                    : 'Produto indisponível no momento.');
+                return;
+            }
             add.textContent = 'Adicionado ✓';
             setTimeout(() => { add.textContent = 'Adicionar ao carrinho'; }, 1200);
         }
@@ -342,7 +362,16 @@ if (ct) {
         const i = Number(b.dataset.m ?? b.dataset.p ?? b.dataset.d);
         if (Number.isNaN(i) || !cart[i]) return;
         if (b.dataset.m !== undefined && cart[i].qtProdutoRetirado > 1) cart[i].qtProdutoRetirado--;
-        if (b.dataset.p !== undefined) cart[i].qtProdutoRetirado++;
+        if (b.dataset.p !== undefined) {
+            const limiteEstoque = Number(cart[i].qtProdutoEstoque);
+            if (!Number.isInteger(limiteEstoque) || limiteEstoque < 0) {
+                return alert('Não foi possível confirmar o estoque deste produto. Atualize o catálogo e tente novamente.');
+            }
+            if (cart[i].qtProdutoRetirado >= limiteEstoque) {
+                return alert(`Há somente ${limiteEstoque} unidade(s) disponível(is) deste produto.`);
+            }
+            cart[i].qtProdutoRetirado++;
+        }
         if (b.dataset.d !== undefined) cart.splice(i, 1);
         setCart(cart);
         draw();
@@ -408,6 +437,23 @@ if (ct) {
         feedback.className = 'checkout-feedback';
 
         try {
+            // Atualiza o saldo antes do checkout; a API ainda valida novamente dentro da transação.
+            const produtosAtuais = await getJson(`${API_URL}/produtos`);
+            const indisponiveis = [];
+            for (const item of cart) {
+                const produtoAtual = produtosAtuais.find(produto => Number(produto.cdProduto) === Number(item.cdProduto));
+                const estoqueAtual = produtoAtual ? Number(produtoAtual.qtProdutoEstoque) : 0;
+                item.qtProdutoEstoque = Number.isInteger(estoqueAtual) && estoqueAtual >= 0 ? estoqueAtual : 0;
+                if (!produtoAtual || item.qtProdutoRetirado > item.qtProdutoEstoque) {
+                    indisponiveis.push(`${item.noProduto || produtoAtual?.noProduto || 'Produto'}: solicitado ${item.qtProdutoRetirado}, disponível ${item.qtProdutoEstoque}`);
+                }
+            }
+            setCart(cart);
+            if (indisponiveis.length) {
+                draw();
+                throw new Error(`Estoque insuficiente no momento. ${indisponiveis.join('; ')}. Ajuste as quantidades e tente novamente.`);
+            }
+
             const idsLojas = [...new Set(cart.map(item => Number(item.idLoja)).filter(Number.isInteger))];
             const lojas = await getJson(`${API_URL}/lojas`);
             const lojasSelecionadas = idsLojas.map(id => lojas.find(loja => Number(loja.idLoja) === id));
@@ -450,6 +496,7 @@ if (ct) {
 
             const linksWhatsApp = destinatarios.map(({ loja, whatsapp }) => {
                 const itensLoja = cart.filter(item => Number(item.idLoja) === Number(loja.idLoja));
+                const itensEsgotados = (resultado.estoqueEsgotado || []).filter(item => Number(item.idLoja) === Number(loja.idLoja));
                 const subtotalLoja = itensLoja.reduce((soma, item) => soma + Number(item.vlProdutoUnitario) * Number(item.qtProdutoRetirado), 0);
                 const listaItens = itensLoja.map(item => `- ${item.qtProdutoRetirado}x ${item.noProduto}: ${fmt(Number(item.vlProdutoUnitario) * Number(item.qtProdutoRetirado))}`).join('\n');
                 const mensagem = [
@@ -462,6 +509,7 @@ if (ct) {
                     'Itens desta loja:',
                     listaItens,
                     `Subtotal: ${fmt(subtotalLoja)}`,
+                    ...(itensEsgotados.length ? ['', `⚠️ AVISO: estoque zerado para ${itensEsgotados.map(item => item.noProduto).join(', ')}. Reponha quando possível.`] : []),
                     '',
                     'Por favor, confirme a disponibilidade e combine comigo a forma de pagamento e o horário/prazo.'
                 ].join('\n');
@@ -470,7 +518,10 @@ if (ct) {
 
             setCart([]);
             draw();
-            feedback.innerHTML = `<div class="checkout-success"><b>Pedido #${Number(idPedido)} criado.</b><p>${tpPagamento}. O pagamento só será confirmado depois que a loja conferir o recebimento.</p><p>Abra o WhatsApp de cada loja e toque em Enviar:</p><div class="checkout-links">${linksWhatsApp}</div><a href="conta.html#pedidos">Ver meus pedidos</a></div>`;
+            const avisoEstoque = (resultado.estoqueEsgotado || []).length
+                ? `<p class="stock-alert">Atenção: o estoque de ${escapeHtml(resultado.estoqueEsgotado.map(item => item.noProduto).join(', '))} zerou. Seu pedido foi registrado; avise a loja pelo botão do WhatsApp abaixo.</p>`
+                : '';
+            feedback.innerHTML = `<div class="checkout-success"><b>Pedido #${Number(idPedido)} criado.</b><p>${tpPagamento}. O pagamento só será confirmado depois que a loja conferir o recebimento.</p>${avisoEstoque}<p>Abra o WhatsApp de cada loja e toque em Enviar:</p><div class="checkout-links">${linksWhatsApp}</div><a href="conta.html#pedidos">Ver meus pedidos</a></div>`;
             feedback.classList.add('success');
             $('#buy').textContent = 'Pedido realizado';
             feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -925,11 +976,18 @@ if (pedidosLista) {
                 const data = pedido.dhVenda ? new Date(pedido.dhVenda).toLocaleString('pt-BR') : 'Data não informada';
                 const cliente = pedido.cliente?.noCliente || 'Cliente';
                 const telefone = pedido.cliente?.telefones?.[0]?.nrTelefone || '';
-                const status = pedido.icPago ? '<span class="tag t-ok">Pago</span>' : '<span class="tag t-tr">Aguardando pagamento</span>';
+                const statusPagamento = pedido.icPago ? '<span class="tag t-ok">Pago</span>' : '<span class="tag t-tr">Aguardando pagamento</span>';
+                const statusPedido = pedido.statusLojas?.[0]?.tpStatusPedido || 'PENDENTE';
+                const statusPedidoLabel = {
+                    PENDENTE: 'Pendente', ENTREGUE: 'Entregue', RETIRADO: 'Retirado', NEGADO: 'Negado'
+                }[statusPedido] || 'Pendente';
+                const motivoNegado = pedido.statusLojas?.[0]?.dsMotivoNegado || '';
+                const idPedido = Number(pedido.idVenda);
                 return `<article class="ord order-card">
                     <div class="top">
-                        <span><b>Pedido #${Number(pedido.idVenda)}</b><br><small>${escapeHtml(data)}</small></span>
-                        ${status}
+                        <span><b>Pedido #${idPedido}</b><br><small>${escapeHtml(data)}</small></span>
+                        ${statusPagamento}
+                        <span class="tag order-state order-state-${statusPedido.toLowerCase()}" data-order-state>${statusPedidoLabel}</span>
                         <strong>${fmt(subtotal)}</strong>
                         <span aria-hidden="true">⌄</span>
                     </div>
@@ -938,6 +996,22 @@ if (pedidosLista) {
                         <b>Cliente:</b> ${escapeHtml(cliente)}${telefone ? ` · ${escapeHtml(telefone)}` : ''}<br>
                         <b>Entrega:</b> ${escapeHtml(endereco || 'A combinar')}<br>
                         <b>Pagamento:</b> ${escapeHtml(pedido.tpPagamento || 'A combinar')}
+                        ${motivoNegado ? `<br><b>Motivo da negativa:</b> ${escapeHtml(motivoNegado)}` : ''}
+                    </div>
+                    <div class="order-actions" data-order-card="${idPedido}">
+                        <label class="order-status-field">Andamento do pedido
+                            <select data-status-pedido>
+                                <option value="PENDENTE" ${statusPedido === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
+                                <option value="ENTREGUE" ${statusPedido === 'ENTREGUE' ? 'selected' : ''}>Entregue</option>
+                                <option value="RETIRADO" ${statusPedido === 'RETIRADO' ? 'selected' : ''}>Retirado</option>
+                                <option value="NEGADO" ${statusPedido === 'NEGADO' ? 'selected' : ''}>Negado</option>
+                            </select>
+                        </label>
+                        <label class="order-reason-field" data-motivo-container ${statusPedido === 'NEGADO' ? '' : 'hidden'}>Motivo da negativa
+                            <input type="text" data-motivo-negado maxlength="255" value="${escapeHtml(motivoNegado)}" placeholder="Ex.: cliente não respondeu">
+                        </label>
+                        <button class="btn-or" type="button" data-salvar-status="${idPedido}">Salvar andamento</button>
+                        <span class="order-action-message" data-status-feedback role="status" aria-live="polite"></span>
                     </div>
                 </article>`;
             }).join('');
@@ -946,6 +1020,51 @@ if (pedidosLista) {
             mostrarMensagem(`${error.message} (loja ${lojaId || 'não vinculada'}; API ${API_URL})`, 'error');
         }
     };
+
+    pedidosLista.addEventListener('change', e => {
+        const select = e.target.closest('[data-status-pedido]');
+        if (!select) return;
+        const card = select.closest('[data-order-card]');
+        const campoMotivo = card?.querySelector('[data-motivo-container]');
+        if (campoMotivo) campoMotivo.hidden = select.value !== 'NEGADO';
+    });
+
+    pedidosLista.addEventListener('click', async e => {
+        const botao = e.target.closest('[data-salvar-status]');
+        if (!botao) return;
+        const card = botao.closest('[data-order-card]');
+        const feedback = card?.querySelector('[data-status-feedback]');
+        const tpStatusPedido = card?.querySelector('[data-status-pedido]')?.value;
+        const dsMotivoNegado = card?.querySelector('[data-motivo-negado]')?.value.trim() || '';
+        const idVenda = Number(botao.dataset.salvarStatus);
+        if (!card || !Number.isInteger(idVenda)) return;
+        if (tpStatusPedido === 'NEGADO' && !dsMotivoNegado) {
+            feedback.textContent = 'Informe o motivo para negar o pedido.';
+            feedback.className = 'order-action-message error';
+            card.querySelector('[data-motivo-negado]')?.focus();
+            return;
+        }
+
+        botao.disabled = true;
+        botao.textContent = 'Salvando...';
+        feedback.textContent = '';
+        try {
+            await getJson(`${API_URL}/pedidos/${idVenda}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idLoja: lojaId, tpStatusPedido, dsMotivoNegado })
+            });
+            await carregarPedidos();
+            mostrarMensagem(`Andamento do pedido #${idVenda} atualizado.`, 'success');
+        } catch (error) {
+            console.error('Erro ao atualizar pedido:', error);
+            feedback.textContent = error.message || 'Não foi possível salvar o andamento.';
+            feedback.className = 'order-action-message error';
+        } finally {
+            botao.disabled = false;
+            botao.textContent = 'Salvar andamento';
+        }
+    });
 
     $('#atualizarPedidos')?.addEventListener('click', carregarPedidos);
     carregarPedidos();
@@ -1017,10 +1136,16 @@ if (accNome) {
                     const status = p.icPago
                         ? '<span class="tag t-ok">✔ Pago</span>'
                         : '<span class="tag t-tr">❗ Pendente</span>';
+                    const nomeStatus = {
+                        PENDENTE: 'Pendente', ENTREGUE: 'Entregue', RETIRADO: 'Retirado', NEGADO: 'Negado'
+                    };
+                    const andamento = (p.statusLojas || []).map(s =>
+                        `${escapeHtml(s.loja?.noLoja || 'Loja')}: ${nomeStatus[s.tpStatusPedido] || 'Pendente'}${s.dsMotivoNegado ? ` — ${escapeHtml(s.dsMotivoNegado)}` : ''}`
+                    ).join('<br>');
                     const itens = (p.produtos || []).map(i =>
                         `<div class="it"><span>🪛 ${i.produto?.noProduto || 'Produto'} x ${i.qtProdutoRetirado}</span><span>${fmt(i.vlTotalProduto)}</span></div>`
                     ).join('');
-                    return `<div class="ord"><div class="top"><span>Pedido #${p.idVenda} - <small>${data}</small></span>${status}<span>${fmt(p.vlTotalVenda)}</span><span>⌄</span></div>${itens}<div class="more">${p.tpPagamento ? 'Pagamento: ' + p.tpPagamento : 'Forma de pagamento não informada'}${p.noEnderecoEntrega ? ' · Entrega: ' + p.noEnderecoEntrega : ''}</div></div>`;
+                    return `<div class="ord"><div class="top"><span>Pedido #${p.idVenda} - <small>${data}</small></span>${status}<span>${fmt(p.vlTotalVenda)}</span><span>⌄</span></div>${itens}<div class="more">${andamento ? `<b>Andamento:</b><br>${andamento}<br>` : ''}${p.tpPagamento ? 'Pagamento: ' + escapeHtml(p.tpPagamento) : 'Forma de pagamento não informada'}${p.noEnderecoEntrega ? ' · Entrega: ' + escapeHtml(p.noEnderecoEntrega) : ''}</div></div>`;
                 }).join('')
                 : '<p>Você ainda não fez nenhum pedido.</p>';
         };
