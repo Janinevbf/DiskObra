@@ -99,6 +99,13 @@ select {
     cursor: pointer
 }
 
+.search button img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+}
+
 .user {
     width: 48px;
     height: 48px;
@@ -145,11 +152,29 @@ select {
 }
 
 /* Garante que o formulário fique legível por cima da imagem */
-.auth .box {
+.auth{
   background-color: #ffffff;
   border-radius: 12px;
   padding: 32px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.box {
+    background: #e0e0e0;
+    width: min(100%, 556px);
+    padding: 24px 34px 28px;
+    text-align: center
+}
+
+.box h1 {
+    font-size: 42px;
+    color: var(--navy)
+}
+
+.box p.sub {
+    color: var(--navy);
+    font-size: 18px;
+    margin: 12px 0 28px
 }
 
 .fld {
@@ -160,6 +185,15 @@ select {
     height: 52px;
     padding: 0 8px;
     gap: 8px
+}
+
+.fld img {
+    width: 26px;
+    height: 26px;
+    display: block;
+    object-fit: contain;
+    align-self: center;
+    flex-shrink: 0;
 }
 
 .fld .ic {
@@ -376,6 +410,13 @@ main {
     padding: 48px 24px
 }
 
+.side a img{
+     width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
 .side {
     background: var(--card);
     padding: 20px 30px;
@@ -438,6 +479,21 @@ main {
     place-items: center;
     font-size: 64px;
     font-weight: 700
+}
+
+.prof .info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    margin-top: 12px;
+}
+
+.prof .info img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
 .prof h2 {

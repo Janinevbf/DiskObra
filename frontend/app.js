@@ -137,12 +137,12 @@ const nav = dep ? [['MINHA LOJA', 'deposito-perfil.html'], ['ESTOQUE', 'deposito
     : [['PRODUTOS', 'produtos.html'], [nav2Label, nav2Href], ['DEPÓSITOS', 'depositos.html']];
 $('#hd').outerHTML = `<header class="hd"><a class="logo" href="produtos.html" ><img src="img/LogotipoDiskObra.png"</a>
 <nav>${nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}</nav>
-<form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)"><input name="q" placeholder="Busque o que procura aqui...." aria-label="Buscar"><button aria-label="Buscar">🔍</button></form>
-<a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta">👤</a>${dep ? '<a class="logout" href="login.html" data-logout>Sair</a>' : ''}</header>`;
+<form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)"><input name="q" placeholder="Busque o que procura aqui...." aria-label="Buscar"><button aria-label="Buscar"><img src="img/icons/search.png" alt="Buscar"></button></form>
+<a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta"></a>${dep ? '<a class="logout" href="login.html" data-logout>Sair</a>' : ''}</header>`;
 
 /* sidebar depósito */
 const sb = $('#sidebar');
-if (sb) sb.innerHTML = [['+ Cadastrar produto', 'deposito-cadastrar-produto.html'], ['🛒 Pedidos', 'deposito-pedidos.html'], ['📦 Estoque', 'deposito-estoque.html'], ['👤 Perfil', 'deposito-perfil.html']]
+if (sb) sb.innerHTML = [['+ Cadastrar produto', 'deposito-cadastrar-produto.html'], ['Pedidos', 'deposito-pedidos.html'], ['Estoque', 'deposito-estoque.html'], ['Perfil', 'deposito-perfil.html']]
     .map(l => `<a href="${l[1]}" class="${location.pathname.endsWith(l[1]) ? 'on' : ''}">${l[0]}</a>`).join('')
     + '<a class="out" href="login.html" data-logout>Sair</a>';
 
@@ -504,11 +504,11 @@ if (depList) {
                 const qtd = l.produtos?.length || 0;
                 return `<article class="dep-card">
                     <div class="dep-head">
-                        <div class="dep-av">🏬</div>
+                        <div class="dep-av"></div>
                         <div><h3>${l.noLoja}</h3><small>CNPJ: ${l.nrCnpj || 'não informado'}</small></div>
                     </div>
-                    <p class="dep-line">📍 ${endereco}</p>
-                    <p class="dep-line">📞 ${tel}</p>
+                    <p class="dep-line"> ${endereco}</p>
+                    <p class="dep-line"> ${tel}</p>
                     <div class="dep-foot">
                         <span class="tag t-ok">${qtd} produto(s)</span>
                         <a class="btn-or" href="produtos.html?loja=${l.idLoja}">Ver produtos</a>
@@ -1054,9 +1054,9 @@ if (accNome) {
 
                 if (cliente) {
                     $('#accNome').textContent = cliente.noCliente || sessao.nome || 'Cliente';
-                    $('#accEmail').textContent = '@ ' + (cliente.usuario?.noEmail || sessao.email || '');
+                    $('#accEmail').textContent = '' + (cliente.usuario?.noEmail || sessao.email || '');
                     const tel = cliente.telefones?.[0]?.nrTelefone;
-                    $('#accTelefone').textContent = tel ? '📞 ' + tel : '';
+                    $('#accTelefone').textContent = tel ? '' + tel : '';
                     renderEnderecos(cliente.enderecos || []);
                     preencherEndereco(cliente.enderecos);
                 } else {
