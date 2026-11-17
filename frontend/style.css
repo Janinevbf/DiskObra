@@ -1893,27 +1893,14 @@ main {
 
 /* Recuperar Senha */
 
-:root {
-    --navy: #003366;
-    --orange: #ff6000;
-    --ink: #263746;
-}
-
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-body {
-    font-family: 'Poppins', sans-serif;
-    min-height: 100vh;
-    background-image:
-        linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
-        url("img/Fundo.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+.recuperar-senha, .redefinir-senha {
+  background-image: url('img/Fundo.jpg'); 
 }
 
 .container {
@@ -2083,17 +2070,6 @@ body {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-}
-
-body {
-    font-family: 'Poppins', sans-serif;
-    min-height: 100vh;
-    background-image:
-        linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
-        url("img/Fundo.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
 }
 
 .container {
