@@ -231,7 +231,7 @@ const ligarCep = (input, preencher) => {
 /* header */
 const nav2Label = document.body.dataset.nav2 || 'MEU CARRINHO';
 const nav2Href = document.body.dataset.nav2Url || (document.body.dataset.nav2 ? 'conta.html#pedidos' : 'carrinho.html');
-const nav = dep ? [['MEU DEPÓSITO', 'deposito-perfil.html'], ['ESTOQUE', 'deposito-estoque.html'], ['PEDIDOS', 'deposito-pedidos.html']]
+const nav = dep ? [['MINHA LOJA', 'deposito-perfil.html'], ['ESTOQUE', 'deposito-estoque.html'], ['PEDIDOS', 'deposito-pedidos.html']]
     : [['PRODUTOS', 'produtos.html'], [nav2Label, nav2Href], ['DEPÓSITOS', 'depositos.html']];
 $('#hd').outerHTML = `<header class="hd"><a class="logo" href="produtos.html" ><img src="img/LogotipoDiskObra.png"</a>
 <nav>${nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}</nav>
@@ -651,8 +651,8 @@ if (depList) {
                         <div class="dep-av">${logo}</div>
                         <div><h3>${l.noLoja}</h3><small>CNPJ: ${l.nrCnpj || 'não informado'}</small></div>
                     </div>
-                    <p class="dep-line">📍 ${endereco}</p>
-                    <p class="dep-line">📞 ${tel}</p>
+                    <p class="dep-line"><img src="img/icons/address.png" alt="Localização"> ${endereco}</p>
+                    <p class="dep-line"><img src="img/icons/phone.png" alt="Telefone"> ${tel}</p>
                     <div class="dep-foot">
                         <span class="tag t-ok">${qtd} produto(s)</span>
                         <a class="btn-or" href="produtos.html?loja=${l.idLoja}">Ver produtos</a>
