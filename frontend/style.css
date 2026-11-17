@@ -326,23 +326,20 @@ select {
 
 /* auth */
 .auth {
-  min-height: 100vh; /* Garante que o fundo ocupe toda a altura da tela */
+  min-height: 100vh; 
   
-  /* Altere 'img/fundo-obra.jpg' para o caminho real da sua imagem */
   background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('img/Fundo.jpg');
   
-  background-size: cover;       /* Faz a imagem preencher toda a área sem esticar */
-  background-position: center;  /* Centraliza a imagem */
-  background-repeat: no-repeat; /* Evita repetição */
+  background-size: cover;       
+  background-position: center;  
+  background-repeat: no-repeat; 
   
-  /* Centraliza a caixa de login (.box) */
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
 }
 
-/* Garante que o formulário fique legível por cima da imagem */
 .auth{
   background-color: #ffffff;
   border-radius: 12px;
@@ -1393,7 +1390,62 @@ main {
     cursor: pointer;
     width: 100%;
     margin: 6px 0 14px;
-    text-align: left
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+
+.up img{
+    width: 30px;
+    height: 30px
+}
+
+.dias-funcionamento {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dias-checkboxes {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.dias-checkboxes label {
+    cursor: pointer;
+}
+
+.dias-checkboxes input {
+    display: none;
+}
+
+.dias-checkboxes span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink);
+    font-size: 13px;
+    transition: .2s;
+}
+
+.dias-checkboxes input:checked + span {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+}
+
+.dias-checkboxes span:hover {
+    border-color: var(--orange);
 }
 
 .store-logo-controls {

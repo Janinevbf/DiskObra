@@ -231,16 +231,16 @@ const ligarCep = (input, preencher) => {
 /* header */
 const nav2Label = document.body.dataset.nav2 || 'MEU CARRINHO';
 const nav2Href = document.body.dataset.nav2Url || (document.body.dataset.nav2 ? 'conta.html#pedidos' : 'carrinho.html');
-const nav = dep ? [['MINHA LOJA', 'deposito-perfil.html'], ['ESTOQUE', 'deposito-estoque.html'], ['PEDIDOS', 'deposito-pedidos.html']]
+const nav = dep ? [['MEU DEPÓSITO', 'deposito-perfil.html'], ['ESTOQUE', 'deposito-estoque.html'], ['PEDIDOS', 'deposito-pedidos.html']]
     : [['PRODUTOS', 'produtos.html'], [nav2Label, nav2Href], ['DEPÓSITOS', 'depositos.html']];
 $('#hd').outerHTML = `<header class="hd"><a class="logo" href="produtos.html" ><img src="img/LogotipoDiskObra.png"</a>
 <nav>${nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}</nav>
-<form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)"><input name="q" placeholder="Busque o que procura aqui...." aria-label="Buscar"><button aria-label="Buscar">🔍</button></form>
-<a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta">👤</a>${dep ? '<a class="logout" href="login.html" data-logout>Sair</a>' : ''}</header>`;
+<form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)"><input name="q" placeholder="Busque o que procura aqui...." aria-label="Buscar"><button aria-label="Buscar"><img src="img/icons/search.png" alt="Buscar"></button></form>
+<a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta">👤</header>`;
 
 /* sidebar depósito */
 const sb = $('#sidebar');
-if (sb) sb.innerHTML = [['+ Cadastrar produto', 'deposito-cadastrar-produto.html'], ['🛒 Pedidos', 'deposito-pedidos.html'], ['📦 Estoque', 'deposito-estoque.html'], ['👤 Perfil', 'deposito-perfil.html']]
+if (sb) sb.innerHTML = [['<img src="img/icons/plus.png" alt="Cadastrar produto" /> Cadastrar produto', 'deposito-cadastrar-produto.html'], ['<img src="img/icons/sales.png" alt="Pedidos" /> Pedidos', 'deposito-pedidos.html'], ['<img src="img/icons/in-transit.png" alt="Estoque" /> Estoque', 'deposito-estoque.html'], ['<img src="img/icons/factory.png" alt="Perfil" /> Perfil', 'deposito-perfil.html']]
     .map(l => `<a href="${l[1]}" class="${location.pathname.endsWith(l[1]) ? 'on' : ''}">${l[0]}</a>`).join('')
     + '<a class="out" href="login.html" data-logout>Sair</a>';
 

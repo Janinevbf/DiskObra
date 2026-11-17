@@ -25,8 +25,10 @@
                             <img id="lojaLogoImagem" alt="Logotipo da loja">
                         </div>
                         <div class="store-logo-upload">
-                            <input id="lojaLogoArquivo" type="file" accept="image/jpeg,image/png,image/webp" style="display:none">
-                            <button class="up" id="lojaLogoSelecionar" type="button">🖼 Inserir imagem</button>
+                            <input id="lojaLogoArquivo" type="file" accept="image/jpeg,image/png,image/webp"
+                                style="display:none">
+                            <button class="up" id="lojaLogoSelecionar" type="button"><img src="img/icons/upload.png"
+                                    alt="Inserir imagem"> Inserir imagem</button>
                             <small>JPG, PNG ou WEBP. A imagem será otimizada antes do envio.</small>
                             <p class="store-message" id="lojaLogoMensagem" role="status" aria-live="polite"></p>
                         </div>
@@ -47,20 +49,30 @@
                 <label style="flex:2">E-mail<input id="lojaEmail" type="email"></label>
             </div>
             <h2 style="font-size:22px;margin:24px 0 10px">Horário de funcionamento</h2>
-            <div class="fr"><label>Abre<select>
-                        <option>08:00</option>
-                        <option>09:00</option>
-                    </select></label><label>Fecha<select>
-                        <option>20:30</option>
-                        <option>18:00</option>
-                    </select></label><label style="flex:2">Dias abertos<select>
-                        <option>Seg., Ter., Qua., Qui.,Sex.</option>
-                        <option>Seg. a Sáb.</option>
-                        <option>Todos os dias</option>
-                    </select></label><label>Aberto em feriados<select>
+            <div class="fr">
+                </select></label><label>Aberto em feriados<select>
                         <option>Sim</option>
                         <option>Não</option>
-                    </select></label></div>
+                    </select></label>
+                <label>Abre
+                    <input type="time" value="08:00" id="lojaAbre">
+                </label>
+                <label>Fecha
+                    <input type="time" value="20:30">
+                </label>
+                <div class="dias-funcionamento">
+                    <label>Dias abertos (selecione os dias)</label>
+                    <div class="dias-checkboxes">
+                        <label><input type="checkbox" name="dias[]" value="seg"><span>Seg</span></label>
+                        <label><input type="checkbox" name="dias[]" value="ter"><span>Ter</span></label>
+                        <label><input type="checkbox" name="dias[]" value="qua"><span>Qua</span></label>
+                        <label><input type="checkbox" name="dias[]" value="qui"><span>Qui</span></label>
+                        <label><input type="checkbox" name="dias[]" value="sex"><span>Sex</span></label>
+                        <label><input type="checkbox" name="dias[]" value="sab"><span>Sáb</span></label>
+                        <label><input type="checkbox" name="dias[]" value="dom"><span>Dom</span></label>
+                    </div>
+                </div>
+            </div>
             <button class="btn-gr sv" id="salvarPerfil" data-save>Salvar</button>
         </section>
     </div>
