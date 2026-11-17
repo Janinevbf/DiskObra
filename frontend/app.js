@@ -1,5 +1,6 @@
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const fmt = n => 'R$' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+const STATUS_PEDIDO_ENCERRADO = new Set(['ENTREGUE', 'NEGADO', 'RETIRADO']);
 const dep = document.body.dataset.area === 'deposito';
 const parsePrice = value => {
     const text = String(value ?? '').trim().replace(/\s/g, '');
@@ -11,6 +12,95 @@ const API_URL = window.DISKOBRA_API_URL || `http://${location.hostname || 'local
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[char]));
+
+const toastRegion = document.createElement('div');
+toastRegion.id = 'siteToastRegion';
+toastRegion.className = 'site-toast-region';
+toastRegion.hidden = true;
+document.body.append(toastRegion);
+let toastTimeout = null;
+let toastCloseTimeout = null;
+
+const mostrarAviso = (mensagem, tipo = 'info') => {
+    const configuracao = {
+        success: { titulo: 'Tudo certo!', icone: '✓' },
+        error: { titulo: 'Não foi possível concluir', icone: '!' },
+        warning: { titulo: 'Atenção', icone: '!' },
+        info: { titulo: 'Aviso', icone: 'i' },
+    }[tipo] || { titulo: 'Aviso', icone: 'i' };
+
+    window.clearTimeout(toastTimeout);
+    window.clearTimeout(toastCloseTimeout);
+    toastRegion.innerHTML = `<div class="site-toast site-toast-${tipo}" role="${tipo === 'error' ? 'alert' : 'status'}">
+        <span class="site-toast-icon" aria-hidden="true">${configuracao.icone}</span>
+        <div class="site-toast-content"><b>${configuracao.titulo}</b><p>${escapeHtml(mensagem)}</p></div>
+        <button type="button" class="site-toast-close" data-toast-close aria-label="Fechar aviso">×</button>
+    </div>`;
+    toastRegion.hidden = false;
+    requestAnimationFrame(() => toastRegion.classList.add('visible'));
+    toastTimeout = window.setTimeout(fecharAviso, 5200);
+};
+
+const fecharAviso = () => {
+    window.clearTimeout(toastCloseTimeout);
+    toastRegion.classList.remove('visible');
+    toastCloseTimeout = window.setTimeout(() => { toastRegion.hidden = true; }, 220);
+};
+
+const avisarNaProximaPagina = (mensagem, tipo = 'info') => {
+    try {
+        sessionStorage.setItem('diskobraAvisoPendente', JSON.stringify({ mensagem, tipo }));
+    } catch {
+        mostrarAviso(mensagem, tipo);
+    }
+};
+
+const confirmarAcao = (mensagem, textoConfirmacao = 'Confirmar') => new Promise(resolve => {
+    const dialogo = document.createElement('div');
+    dialogo.className = 'site-dialog-backdrop';
+    dialogo.innerHTML = `<section class="site-dialog" role="alertdialog" aria-modal="true" aria-labelledby="siteDialogTitle" aria-describedby="siteDialogMessage">
+        <span class="site-dialog-icon" aria-hidden="true">!</span>
+        <h2 id="siteDialogTitle">Confirmar ação</h2>
+        <p id="siteDialogMessage">${escapeHtml(mensagem)}</p>
+        <div class="site-dialog-actions">
+            <button type="button" class="site-dialog-cancel" data-dialog-cancel>Cancelar</button>
+            <button type="button" class="site-dialog-confirm" data-dialog-confirm>${escapeHtml(textoConfirmacao)}</button>
+        </div>
+    </section>`;
+    document.body.append(dialogo);
+
+    const finalizar = confirmado => {
+        document.removeEventListener('keydown', aoPressionarTecla);
+        dialogo.remove();
+        resolve(confirmado);
+    };
+    const aoPressionarTecla = event => {
+        if (event.key === 'Escape') finalizar(false);
+    };
+    dialogo.addEventListener('click', event => {
+        if (event.target === dialogo || event.target.closest('[data-dialog-cancel]')) finalizar(false);
+        if (event.target.closest('[data-dialog-confirm]')) finalizar(true);
+    });
+    document.addEventListener('keydown', aoPressionarTecla);
+    dialogo.querySelector('[data-dialog-cancel]').focus();
+});
+
+document.addEventListener('click', e => {
+    if (e.target.closest('[data-toast-close]')) {
+        window.clearTimeout(toastTimeout);
+        fecharAviso();
+    }
+});
+
+try {
+    const avisoPendente = JSON.parse(sessionStorage.getItem('diskobraAvisoPendente') || 'null');
+    if (avisoPendente?.mensagem) {
+        sessionStorage.removeItem('diskobraAvisoPendente');
+        mostrarAviso(avisoPendente.mensagem, avisoPendente.tipo);
+    }
+} catch {
+    // O navegador pode bloquear o sessionStorage; os avisos locais continuam disponíveis.
+}
 
 const lerResposta = async res => {
     try {
@@ -270,9 +360,9 @@ document.addEventListener('click', async e => {
         const produto = produtosCache.get(id) || (produtoDetalhe && Number(produtoDetalhe.cdProduto) === id ? produtoDetalhe : null);
         if (produto) {
             if (!addToCart(produto)) {
-                alert(Number(produto.qtProdutoEstoque) > 0
+                mostrarAviso(Number(produto.qtProdutoEstoque) > 0
                     ? `Há somente ${produto.qtProdutoEstoque} unidade(s) disponível(is) deste produto.`
-                    : 'Produto indisponível no momento.');
+                    : 'Produto indisponível no momento.', 'warning');
                 return;
             }
             add.textContent = 'Adicionado ✓';
@@ -285,7 +375,7 @@ document.addEventListener('click', async e => {
         e.preventDefault();
         const sessao = getSessao();
         if (!sessao?.clienteId) {
-            alert('Entre na sua conta para favoritar produtos.');
+            avisarNaProximaPagina('Entre na sua conta para favoritar produtos.', 'warning');
             location.href = 'login.html';
             return;
         }
@@ -365,10 +455,10 @@ if (ct) {
         if (b.dataset.p !== undefined) {
             const limiteEstoque = Number(cart[i].qtProdutoEstoque);
             if (!Number.isInteger(limiteEstoque) || limiteEstoque < 0) {
-                return alert('Não foi possível confirmar o estoque deste produto. Atualize o catálogo e tente novamente.');
+                return mostrarAviso('Não foi possível confirmar o estoque deste produto. Atualize o catálogo e tente novamente.', 'warning');
             }
             if (cart[i].qtProdutoRetirado >= limiteEstoque) {
-                return alert(`Há somente ${limiteEstoque} unidade(s) disponível(is) deste produto.`);
+                return mostrarAviso(`Há somente ${limiteEstoque} unidade(s) disponível(is) deste produto.`, 'warning');
             }
             cart[i].qtProdutoRetirado++;
         }
@@ -382,7 +472,7 @@ if (ct) {
         const v = $('#cep').value.replace(/\D/g, '');
         if (v.length !== 8) {
             $('#cep').focus();
-            return alert('Digite um CEP com 8 números.');
+            return mostrarAviso('Digite um CEP com 8 números.', 'warning');
         }
         frete = 49.9;
         draw();
@@ -411,9 +501,9 @@ if (ct) {
 
     $('#buy').onclick = async () => {
         const cart = getCart();
-        if (!cart.length) return alert('Adicione produtos ao carrinho.');
+        if (!cart.length) return mostrarAviso('Adicione produtos ao carrinho.', 'warning');
         if (!sessao?.clienteId) {
-            alert('Faça login como cliente para finalizar a compra.');
+            avisarNaProximaPagina('Faça login como cliente para finalizar a compra.', 'warning');
             location.href = 'login.html';
             return;
         }
@@ -427,7 +517,7 @@ if (ct) {
         const sgUf = $('#endUf').value.trim().toUpperCase();
 
         if (!retirada && (!noEndereco || !noCidade || sgUf.length !== 2)) {
-            return alert('Preencha o endereço de entrega (endereço, cidade e UF).');
+            return mostrarAviso('Preencha o endereço de entrega (endereço, cidade e UF).', 'warning');
         }
 
         $('#buy').disabled = true;
@@ -553,9 +643,12 @@ if (depList) {
                     : 'Endereço não informado';
                 const tel = l.telefones?.[0]?.nrTelefone || 'Telefone não informado';
                 const qtd = l.produtos?.length || 0;
+                const logo = l.dsLogo
+                    ? `<img src="${escapeHtml(imagemUrl(l.dsLogo))}" alt="Logotipo de ${escapeHtml(l.noLoja)}">`
+                    : '🏬';
                 return `<article class="dep-card">
                     <div class="dep-head">
-                        <div class="dep-av">🏬</div>
+                        <div class="dep-av">${logo}</div>
                         <div><h3>${l.noLoja}</h3><small>CNPJ: ${l.nrCnpj || 'não informado'}</small></div>
                     </div>
                     <p class="dep-line">📍 ${endereco}</p>
@@ -648,15 +741,15 @@ $$('form[data-auth], #formLogin, #formCadastro').forEach(f => f.addEventListener
             const result = await lerResposta(res);
             if (!res.ok) throw new Error(result.error || 'Erro ao cadastrar');
 
-            alert(isDeposito
+            avisarNaProximaPagina(isDeposito
                 ? 'Depósito cadastrado com sucesso! Faça login para continuar.'
-                : 'Cadastro realizado com sucesso! Faça login para continuar.');
+                : 'Cadastro realizado com sucesso! Faça login para continuar.', 'success');
             location.href = 'login.html';
         }
     } catch (err) {
         console.error('Erro no login/cadastro:', err);
         if (m) m.textContent = err.message;
-        else alert(err.message);
+        else mostrarAviso(err.message, 'error');
     }
 }));
 
@@ -876,11 +969,47 @@ const estoqueLista = $('#estoqueLista');
 if (estoqueLista) {
     const sessao = getSessao();
     const mensagem = $('#estoqueMensagem');
+    const estoqueAlertas = $('#estoqueAlertas');
     const lojaId = Number(sessao?.lojaId);
+    const limiteEstoqueBaixo = 5;
     const produtos = new Map();
     const mostrarMensagem = (texto, tipo = '') => {
         mensagem.textContent = texto;
         mensagem.className = `store-message ${tipo}`.trim();
+    };
+
+    const renderizarAlertas = lista => {
+        if (!estoqueAlertas) return;
+        const semEstoque = lista.filter(produto => Number(produto.qtProdutoEstoque) <= 0);
+        const acabando = lista.filter(produto => {
+            const quantidade = Number(produto.qtProdutoEstoque);
+            return quantidade > 0 && quantidade <= limiteEstoqueBaixo;
+        });
+        const alertas = [
+            ...semEstoque.map(produto => ({ produto, indisponivel: true })),
+            ...acabando.map(produto => ({ produto, indisponivel: false })),
+        ];
+
+        estoqueAlertas.innerHTML = `
+            <div class="inventory-alerts-head">
+                <div>
+                    <h3>Produtos precisando de atenção</h3>
+                    <p>Estoque baixo: ${limiteEstoqueBaixo} unidades ou menos.</p>
+                </div>
+                <div class="inventory-alert-counts">
+                    <span class="inventory-count-low">${acabando.length} acabando</span>
+                    <span class="inventory-count-empty">${semEstoque.length} indisponível(is)</span>
+                </div>
+            </div>
+            ${alertas.length ? `<div class="inventory-alert-list">${alertas.map(({ produto, indisponivel }) => `
+                <article class="inventory-alert-item ${indisponivel ? 'is-empty' : 'is-low'}">
+                    <div>
+                        <b>${escapeHtml(produto.noProduto)}</b>
+                        <span>${indisponivel ? 'Indisponível — estoque zerado' : `Acabando — restam ${Number(produto.qtProdutoEstoque)} unidade(s)`}</span>
+                    </div>
+                    <a href="deposito-cadastrar-produto.html?id=${Number(produto.cdProduto)}">Repor estoque</a>
+                </article>`).join('')}</div>` : `<p class="inventory-all-good">${lista.length ? 'Nenhum produto acabando ou indisponível.' : 'Cadastre produtos para acompanhar os alertas de estoque.'}</p>`}
+        `;
     };
 
     const carregarEstoque = async () => {
@@ -895,6 +1024,7 @@ if (estoqueLista) {
             const lista = Array.isArray(loja.produtos) ? loja.produtos : [];
             produtos.clear();
             lista.forEach(produto => produtos.set(Number(produto.cdProduto), produto));
+            renderizarAlertas(lista);
             if (!lista.length) {
                 mostrarMensagem('Nenhum produto cadastrado. Use “Cadastrar produto” para adicionar o primeiro.');
                 return;
@@ -925,7 +1055,7 @@ if (estoqueLista) {
         const produto = produtos.get(produtoId);
         if (!produto) return;
 
-        if (confirm(`Excluir “${produto.noProduto}” do estoque?`)) {
+        if (await confirmarAcao(`Excluir “${produto.noProduto}” do estoque?`, 'Excluir')) {
             try {
                 await getJson(`${API_URL}/produtos/${produtoId}`, { method: 'DELETE' });
                 await carregarEstoque();
@@ -976,8 +1106,10 @@ if (pedidosLista) {
                 const data = pedido.dhVenda ? new Date(pedido.dhVenda).toLocaleString('pt-BR') : 'Data não informada';
                 const cliente = pedido.cliente?.noCliente || 'Cliente';
                 const telefone = pedido.cliente?.telefones?.[0]?.nrTelefone || '';
-                const statusPagamento = pedido.icPago ? '<span class="tag t-ok">Pago</span>' : '<span class="tag t-tr">Aguardando pagamento</span>';
                 const statusPedido = pedido.statusLojas?.[0]?.tpStatusPedido || 'PENDENTE';
+                const statusPagamento = pedido.icPago
+                    ? '<span class="tag t-ok">Pago</span>'
+                    : STATUS_PEDIDO_ENCERRADO.has(statusPedido) ? '' : '<span class="tag t-tr">Aguardando pagamento</span>';
                 const statusPedidoLabel = {
                     PENDENTE: 'Pendente', ENTREGUE: 'Entregue', RETIRADO: 'Retirado', NEGADO: 'Negado'
                 }[statusPedido] || 'Pendente';
@@ -1083,12 +1215,13 @@ if (accNome) {
             .map(p => p[0]).slice(0, 2).join('').toUpperCase();
         $('#accAvatar').textContent = iniciais;
         $('#accNome').textContent = sessao.nome || 'Cliente';
-        $('#accEmail').textContent = '@ ' + (sessao.email || '');
 
         const secoes = ['dados', 'pedidos', 'enderecos', 'favoritos'];
+        let carregarPedidosCliente = null;
         const mostrarSecao = nome => {
             $$('[data-sec]').forEach(s => { s.hidden = s.dataset.sec !== nome; });
             $$('.side a[data-target]').forEach(a => a.classList.toggle('on', a.dataset.target === nome));
+            if (nome === 'pedidos') carregarPedidosCliente?.();
         };
         const alvo = (location.hash || '#dados').replace('#', '');
         mostrarSecao(secoes.includes(alvo) ? alvo : 'dados');
@@ -1133,19 +1266,29 @@ if (accNome) {
             $('#accPedidos').innerHTML = lista.length
                 ? lista.map(p => {
                     const data = new Date(p.dhVenda).toLocaleDateString('pt-BR');
+                    const statusLojasPedido = p.statusLojas || [];
+                    const pedidoEncerrado = statusLojasPedido.length > 0 && statusLojasPedido.every(status =>
+                        STATUS_PEDIDO_ENCERRADO.has(status.tpStatusPedido)
+                    );
                     const status = p.icPago
                         ? '<span class="tag t-ok">✔ Pago</span>'
-                        : '<span class="tag t-tr">❗ Pendente</span>';
+                        : pedidoEncerrado ? '' : '<span class="tag t-tr">❗ Pendente</span>';
                     const nomeStatus = {
+
                         PENDENTE: 'Pendente', ENTREGUE: 'Entregue', RETIRADO: 'Retirado', NEGADO: 'Negado'
                     };
+                    const statusLojas = (p.statusLojas || []).map(s => {
+                        const statusLoja = s.tpStatusPedido || 'PENDENTE';
+                        const labelStatus = nomeStatus[statusLoja] || 'Pendente';
+                        return `<span class="tag order-state order-state-${statusLoja.toLowerCase()}">${escapeHtml(s.loja?.noLoja || 'Loja')}: ${labelStatus}</span>`;
+                    }).join('');
                     const andamento = (p.statusLojas || []).map(s =>
                         `${escapeHtml(s.loja?.noLoja || 'Loja')}: ${nomeStatus[s.tpStatusPedido] || 'Pendente'}${s.dsMotivoNegado ? ` — ${escapeHtml(s.dsMotivoNegado)}` : ''}`
                     ).join('<br>');
                     const itens = (p.produtos || []).map(i =>
                         `<div class="it"><span>🪛 ${i.produto?.noProduto || 'Produto'} x ${i.qtProdutoRetirado}</span><span>${fmt(i.vlTotalProduto)}</span></div>`
                     ).join('');
-                    return `<div class="ord"><div class="top"><span>Pedido #${p.idVenda} - <small>${data}</small></span>${status}<span>${fmt(p.vlTotalVenda)}</span><span>⌄</span></div>${itens}<div class="more">${andamento ? `<b>Andamento:</b><br>${andamento}<br>` : ''}${p.tpPagamento ? 'Pagamento: ' + escapeHtml(p.tpPagamento) : 'Forma de pagamento não informada'}${p.noEnderecoEntrega ? ' · Entrega: ' + escapeHtml(p.noEnderecoEntrega) : ''}</div></div>`;
+                    return `<div class="ord"><div class="top"><span>Pedido #${p.idVenda} - <small>${data}</small></span>${status}${statusLojas}<span>${fmt(p.vlTotalVenda)}</span><span>⌄</span></div>${itens}<div class="more">${andamento ? `<b>Andamento:</b><br>${andamento}<br>` : ''}${p.tpPagamento ? 'Pagamento: ' + escapeHtml(p.tpPagamento) : 'Forma de pagamento não informada'}${p.noEnderecoEntrega ? ' · Entrega: ' + escapeHtml(p.noEnderecoEntrega) : ''}</div></div>`;
                 }).join('')
                 : '<p>Você ainda não fez nenhum pedido.</p>';
         };
@@ -1169,27 +1312,62 @@ if (accNome) {
             }).join('');
         };
 
+        let pedidosCarregando = false;
+        carregarPedidosCliente = async () => {
+            if (pedidosCarregando) return;
+            pedidosCarregando = true;
+            const botaoAtualizar = $('#atualizarPedidosCliente');
+            if (botaoAtualizar) {
+                botaoAtualizar.disabled = true;
+                botaoAtualizar.textContent = 'Atualizando...';
+            }
+            try {
+                const pedidos = await getJson(`${API_URL}/clientes/${sessao.clienteId}/pedidos`, { cache: 'no-store' });
+                renderPedidos(Array.isArray(pedidos) ? pedidos : []);
+            } catch (error) {
+                console.error('Erro ao atualizar pedidos do cliente:', error);
+                $('#accPedidos').innerHTML = '<p>Não foi possível atualizar seus pedidos. Tente novamente.</p>';
+            } finally {
+                pedidosCarregando = false;
+                if (botaoAtualizar) {
+                    botaoAtualizar.disabled = false;
+                    botaoAtualizar.textContent = 'Atualizar pedidos';
+                }
+            }
+        };
+
+        $('#atualizarPedidosCliente')?.addEventListener('click', carregarPedidosCliente);
+        const atualizarPedidosQuandoVisivel = () => {
+            if (document.visibilityState === 'visible' && !$('#sec-pedidos')?.hidden) {
+                carregarPedidosCliente();
+            }
+        };
+        window.addEventListener('focus', atualizarPedidosQuandoVisivel);
+        document.addEventListener('visibilitychange', atualizarPedidosQuandoVisivel);
+        window.setInterval(atualizarPedidosQuandoVisivel, 15000);
+
         const carregarConta = async () => {
             try {
-                const [cliente, pedidos, favoritos] = await Promise.all([
+                const [cliente, favoritos] = await Promise.all([
                     getJson(`${API_URL}/clientes/${sessao.clienteId}`).catch(() => null),
-                    getJson(`${API_URL}/clientes/${sessao.clienteId}/pedidos`).catch(() => []),
                     getJson(`${API_URL}/clientes/${sessao.clienteId}/favoritos`).catch(() => [])
                 ]);
 
                 if (cliente) {
                     $('#accNome').textContent = cliente.noCliente || sessao.nome || 'Cliente';
-                    $('#accEmail').textContent = '@ ' + (cliente.usuario?.noEmail || sessao.email || '');
                     const tel = cliente.telefones?.[0]?.nrTelefone;
-                    $('#accTelefone').textContent = tel ? '📞 ' + tel : '';
+                    $('#accNomeCompleto').value = cliente.noCliente || '';
+                    $('#accEmailConta').value = cliente.usuario?.noEmail || sessao.email || '';
+                    $('#accCpf').value = cliente.nrCpf || '';
+                    $('#accTelefoneInput').value = tel || '';
                     renderEnderecos(cliente.enderecos || []);
                     preencherEndereco(cliente.enderecos);
                 } else {
                     $('#accEnderecos').innerHTML = '<p>Nenhum endereço cadastrado ainda.</p>';
                 }
 
-                renderPedidos(pedidos || []);
                 renderFavoritos(favoritos || []);
+                await carregarPedidosCliente();
             } catch (err) {
                 console.error('Erro ao carregar a conta:', err);
                 $('#accPedidos').innerHTML = '<p>Não foi possível carregar seus pedidos.</p>';
@@ -1197,6 +1375,55 @@ if (accNome) {
                 $('#accFavoritos').innerHTML = '<p>Não foi possível carregar seus favoritos.</p>';
             }
         };
+
+        $('#accDadosForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            if (!form.reportValidity()) return;
+
+            const btn = $('#salvarDados');
+            const feedback = $('#dadosMensagem');
+            const body = {
+                nome: $('#accNomeCompleto').value.trim(),
+                email: $('#accEmailConta').value.trim(),
+                cpf: $('#accCpf').value.replace(/\D/g, ''),
+                telefone: $('#accTelefoneInput').value.trim(),
+            };
+            if (body.cpf.length !== 11) {
+                feedback.textContent = 'O CPF deve conter 11 números.';
+                feedback.className = 'store-message error';
+                $('#accCpf').focus();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Salvando...';
+            feedback.textContent = '';
+            feedback.className = 'store-message';
+            try {
+                const resultado = await getJson(`${API_URL}/clientes/${sessao.clienteId}/dados`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const cliente = resultado.cliente;
+                sessao.nome = cliente?.noCliente || body.nome;
+                sessao.email = cliente?.usuario?.noEmail || body.email;
+                localStorage.setItem('usuarioLogado', JSON.stringify(sessao));
+                $('#accNome').textContent = sessao.nome;
+                $('#accEmailConta').value = sessao.email;
+                const iniciais = sessao.nome.trim().split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+                $('#accAvatar').textContent = iniciais || '--';
+                feedback.textContent = resultado.message || 'Dados atualizados com sucesso!';
+                feedback.className = 'store-message success';
+            } catch (error) {
+                feedback.textContent = error.message || 'Não foi possível salvar seus dados.';
+                feedback.className = 'store-message error';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Salvar dados';
+            }
+        });
 
         $('#salvarEndereco')?.addEventListener('click', async e => {
             e.preventDefault();
@@ -1208,7 +1435,7 @@ if (accNome) {
                 sgUf: $('#accUf').value.trim().toUpperCase()
             };
             if (!body.noEndereco || !body.noCidade || body.sgUf.length !== 2) {
-                return alert('Preencha endereço, cidade e UF.');
+                return mostrarAviso('Preencha endereço, cidade e UF.', 'warning');
             }
 
             const btn = $('#salvarEndereco');
@@ -1223,7 +1450,7 @@ if (accNome) {
                 await carregarConta();
                 btn.textContent = 'Salvo ✓';
             } catch (err) {
-                alert(err.message);
+                mostrarAviso(err.message, 'error');
                 btn.textContent = 'Salvar endereço';
             } finally {
                 setTimeout(() => {
@@ -1260,6 +1487,21 @@ if (salvarPerfil) {
         location.href = 'login.html';
     } else {
         const val = id => $(id).value.trim();
+        const logoInput = $('#lojaLogoArquivo');
+        const logoButton = $('#lojaLogoSelecionar');
+        const logoPreview = $('#lojaLogoPreview');
+        const logoPreviewImage = $('#lojaLogoImagem');
+        const logoMensagem = $('#lojaLogoMensagem');
+
+        const mostrarLogo = caminho => {
+            if (!caminho) {
+                logoPreview.hidden = true;
+                logoPreviewImage.removeAttribute('src');
+                return;
+            }
+            logoPreviewImage.src = caminho;
+            logoPreview.hidden = false;
+        };
 
         const preencher = loja => {
             const end = loja.enderecos?.[0] || {};
@@ -1271,6 +1513,7 @@ if (salvarPerfil) {
             $('#lojaNumero').value = end.nrNumero || '';
             $('#lojaCidade').value = end.noCidade || '';
             $('#lojaUf').value = end.sgUf || '';
+            mostrarLogo(loja.dsLogo ? imagemUrl(loja.dsLogo) : null);
         };
 
         fetch(`${API_URL}/lojas/${sessao.lojaId}`)
@@ -1278,8 +1521,38 @@ if (salvarPerfil) {
             .then(preencher)
             .catch(err => {
                 console.error(err);
-                alert(err.message);
+                mostrarAviso(err.message, 'error');
             });
+
+        logoButton.addEventListener('click', () => logoInput.click());
+        logoInput.addEventListener('change', async () => {
+            const arquivo = logoInput.files?.[0];
+            if (!arquivo) return;
+
+            logoButton.disabled = true;
+            logoButton.textContent = 'Enviando...';
+            logoMensagem.textContent = '';
+            logoMensagem.className = 'store-message';
+            try {
+                const dataUrl = await comprimirImagem(arquivo);
+                const resultado = await getJson(`${API_URL}/lojas/${sessao.lojaId}/logo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dataUrl }),
+                });
+                mostrarLogo(imagemUrl(resultado.dsLogo));
+                logoMensagem.textContent = resultado.message || 'Logotipo atualizado com sucesso!';
+                logoMensagem.className = 'store-message success';
+            } catch (error) {
+                console.error('Erro ao enviar logotipo:', error);
+                logoMensagem.textContent = error.message || 'Não foi possível enviar o logotipo.';
+                logoMensagem.className = 'store-message error';
+            } finally {
+                logoButton.disabled = false;
+                logoButton.textContent = '🖼 Inserir imagem';
+                logoInput.value = '';
+            }
+        });
 
         const cep = $('#lojaCep');
         let ultimoCep = '';
@@ -1345,7 +1618,7 @@ if (salvarPerfil) {
                     salvarPerfil.disabled = false;
                 }, 1400);
             } catch (err) {
-                alert(err.message);
+                mostrarAviso(err.message, 'error');
                 salvarPerfil.textContent = 'Salvar';
                 salvarPerfil.disabled = false;
             }

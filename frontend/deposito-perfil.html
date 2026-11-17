@@ -19,7 +19,19 @@
         <section class="pnl">
             <div class="fr">
                 <label style="flex:2">Nome do depósito<input id="lojaNome"></label>
-                <label>Foto do logotipo<button class="up" style="margin-top:6px">🖼 Inserir imagem</button></label>
+                <label style="flex:2">Foto do logotipo
+                    <div class="store-logo-controls">
+                        <div class="store-logo-preview" id="lojaLogoPreview" hidden>
+                            <img id="lojaLogoImagem" alt="Logotipo da loja">
+                        </div>
+                        <div class="store-logo-upload">
+                            <input id="lojaLogoArquivo" type="file" accept="image/jpeg,image/png,image/webp" style="display:none">
+                            <button class="up" id="lojaLogoSelecionar" type="button">🖼 Inserir imagem</button>
+                            <small>JPG, PNG ou WEBP. A imagem será otimizada antes do envio.</small>
+                            <p class="store-message" id="lojaLogoMensagem" role="status" aria-live="polite"></p>
+                        </div>
+                    </div>
+                </label>
             </div>
             <div class="fr">
                 <label>CEP<input id="lojaCep" inputmode="numeric" maxlength="9" placeholder="00000-000"></label>

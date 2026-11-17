@@ -28,25 +28,39 @@
                 conta</a>
         </aside>
         <div>
-            <section class="pnl prof" id="sec-dados" data-sec="dados">
-                <div class="av" id="accAvatar" aria-hidden="true">--</div>
-                <div>
-                    <h2 id="accNome">Carregando...</h2>
-
-                    <p class="info">
-                        <img src="img/icons/email.png" alt="">
-                        <span id="accEmail"></span>
-                    </p>
-
-                    <p class="info">
-                        <img src="img/icons/phone.png" alt="">
-                        <span id="accTelefone"></span>
-                    </p>
+            <section class="pnl account-profile" id="sec-dados" data-sec="dados">
+                <div class="account-profile-head">
+                    <div class="av" id="accAvatar" aria-hidden="true">--</div>
+                    <div>
+                        <h2 id="accNome">Carregando...</h2>
+                        <p>Consulte e atualize seus dados pessoais.</p>
+                    </div>
                 </div>
+                <form class="account-data-form" id="accDadosForm">
+                    <label>Nome completo
+                        <input id="accNomeCompleto" name="nome" type="text" maxlength="155" autocomplete="name" required>
+                    </label>
+                    <label>E-mail
+                        <input id="accEmailConta" name="email" type="email" maxlength="150" autocomplete="email" required>
+                    </label>
+                    <label>CPF
+                        <input id="accCpf" name="cpf" type="text" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="000.000.000-00" required>
+                    </label>
+                    <label>Telefone
+                        <input id="accTelefoneInput" name="telefone" type="tel" maxlength="20" autocomplete="tel" placeholder="(00) 00000-0000">
+                    </label>
+                    <div class="account-data-actions">
+                        <button class="btn-or" id="salvarDados" type="submit">Salvar dados</button>
+                        <p class="store-message" id="dadosMensagem" role="status" aria-live="polite"></p>
+                    </div>
+                </form>
             </section>
 
             <section class="pnl" id="sec-pedidos" data-sec="pedidos" hidden>
-                <h2>Meus pedidos</h2>
+                <div class="customer-orders-head">
+                    <h2>Meus pedidos</h2>
+                    <button class="btn-or" id="atualizarPedidosCliente" type="button">Atualizar pedidos</button>
+                </div>
                 <div id="accPedidos">
                     <p>Carregando pedidos...</p>
                 </div>

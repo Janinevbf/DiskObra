@@ -30,13 +30,14 @@ model Usuario {
 }
 
 model Loja {
-  idLoja     Int             @id @default(autoincrement())
-  noLoja     String          @db.VarChar(100)
-  nrCnpj     String          @db.VarChar(25)
-  usuario    Usuario?        // Dono da loja
-  produtos   Produto[]
-  telefones  TelefoneLoja[]
-  enderecos  EnderecosLoja[]
+  idLoja        Int             @id @default(autoincrement())
+  noLoja        String          @db.VarChar(100)
+  nrCnpj        String          @db.VarChar(25)
+  dsLogo        String?         @db.VarChar(500)
+  usuario       Usuario?        // Dono da loja
+  produtos      Produto[]
+  telefones     TelefoneLoja[]
+  enderecos     EnderecosLoja[]
   statusPedidos StatusPedidoLoja[]
 
   @@map("TB_LOJA")

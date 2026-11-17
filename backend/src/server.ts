@@ -24,7 +24,9 @@ app.use((req, res, next) => {
 });
 
 const uploadDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../uploads/produtos");
+const lojaLogoDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../uploads/lojas");
 app.use("/uploads/produtos", express.static(uploadDirectory, { maxAge: "1d" }));
+app.use("/uploads/lojas", express.static(lojaLogoDirectory, { maxAge: "1d" }));
 
 // Conexão do Prisma com Adapter para o PostgreSQL
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -191,6 +193,55 @@ app.put("/lojas/:id", async (req, res) => {
   }
 });
 
+// Salvar o logotipo do perfil de uma loja
+app.post("/lojas/:id/logo", async (req, res) => {
+  let arquivoCriado: string | null = null;
+  try {
+    const idLoja = Number(req.params.id);
+    const dataUrl = req.body?.dataUrl;
+    if (!Number.isInteger(idLoja) || idLoja <= 0) {
+      return res.status(400).json({ error: "ID da loja inválido." });
+    }
+
+    const imagem = typeof dataUrl === "string"
+      ? /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/i.exec(dataUrl)
+      : null;
+    if (!imagem) {
+      return res.status(400).json({ error: "Envie uma imagem JPG, PNG ou WEBP válida." });
+    }
+
+    const bytes = Buffer.from(imagem[2], "base64");
+    if (!bytes.length || bytes.length > 3 * 1024 * 1024) {
+      return res.status(413).json({ error: "O logotipo deve ter no máximo 3 MB após a compressão." });
+    }
+
+    const loja = await prisma.loja.findUnique({ where: { idLoja } });
+    if (!loja) {
+      return res.status(404).json({ error: "Loja não encontrada." });
+    }
+
+    const extensao = imagem[1].toLowerCase() === "jpeg" ? "jpg" : imagem[1].toLowerCase();
+    await mkdir(lojaLogoDirectory, { recursive: true });
+    const nomeArquivo = `${randomUUID()}.${extensao}`;
+    arquivoCriado = path.join(lojaLogoDirectory, nomeArquivo);
+    await writeFile(arquivoCriado, bytes, { flag: "wx" });
+
+    const dsLogo = `/uploads/lojas/${nomeArquivo}`;
+    await prisma.loja.update({ where: { idLoja }, data: { dsLogo } });
+
+    if (loja.dsLogo?.startsWith("/uploads/lojas/")) {
+      const logoAntiga = path.join(lojaLogoDirectory, path.basename(loja.dsLogo));
+      await rm(logoAntiga, { force: true }).catch(() => {});
+    }
+
+    return res.json({ message: "Logotipo atualizado com sucesso!", dsLogo });
+  } catch (error) {
+    if (arquivoCriado) await rm(arquivoCriado, { force: true }).catch(() => {});
+    console.error("Erro ao salvar logotipo da loja:", error);
+    return res.status(500).json({ error: "Não foi possível salvar o logotipo da loja." });
+  }
+});
+
 // Listar pedidos que contêm produtos da loja
 app.get("/lojas/:id/pedidos", async (req, res) => {
   try {
@@ -275,6 +326,7 @@ app.patch("/pedidos/:id/status", async (req, res) => {
       },
     });
 
+    res.setHeader("Cache-Control", "no-store");
     return res.json({ message: "Status do pedido atualizado.", status: atualizado });
   } catch (error) {
     console.error("Erro ao atualizar status do pedido:", error);
@@ -524,6 +576,91 @@ app.get("/clientes/:id", async (req, res) => {
   }
 });
 
+// Atualizar dados pessoais e de contato do cliente
+app.put("/clientes/:id/dados", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const nome = typeof req.body?.nome === "string" ? req.body.nome.trim() : "";
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const cpf = String(req.body?.cpf ?? "").replace(/\D/g, "");
+    const telefone = String(req.body?.telefone ?? "").replace(/\D/g, "");
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "ID do cliente inválido." });
+    }
+    if (!nome || nome.length > 155) {
+      return res.status(400).json({ error: "Informe um nome com até 155 caracteres." });
+    }
+    if (!email || email.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Informe um e-mail válido com até 150 caracteres." });
+    }
+    if (cpf.length !== 11) {
+      return res.status(400).json({ error: "O CPF deve conter 11 números." });
+    }
+    if (telefone && (telefone.length < 10 || telefone.length > 13)) {
+      return res.status(400).json({ error: "Informe um telefone válido com DDD." });
+    }
+
+    const cliente = await prisma.cliente.findUnique({
+      where: { idCliente: id },
+      include: { usuario: true },
+    });
+    if (!cliente) {
+      return res.status(404).json({ error: "Cliente não encontrado." });
+    }
+    if (!cliente.usuario) {
+      return res.status(400).json({ error: "Este cliente não possui uma conta de acesso vinculada." });
+    }
+
+    const usuarioComEmail = await prisma.usuario.findUnique({ where: { noEmail: email } });
+    if (usuarioComEmail && usuarioComEmail.idUsuario !== cliente.usuario.idUsuario) {
+      return res.status(409).json({ error: "Este e-mail já está sendo usado por outra conta." });
+    }
+
+    const clienteAtualizado = await prisma.$transaction(async tx => {
+      await tx.cliente.update({
+        where: { idCliente: id },
+        data: { noCliente: nome, nrCpf: cpf },
+      });
+      await tx.usuario.update({
+        where: { idUsuario: cliente.usuario!.idUsuario },
+        data: { noEmail: email },
+      });
+
+      const telefoneExistente = await tx.telefoneCliente.findFirst({
+        where: { idCliente: id },
+        orderBy: { idTelefoneCliente: "asc" },
+      });
+      if (!telefone) {
+        await tx.telefoneCliente.deleteMany({ where: { idCliente: id } });
+      } else if (telefoneExistente) {
+        await tx.telefoneCliente.update({
+          where: { idTelefoneCliente: telefoneExistente.idTelefoneCliente },
+          data: { nrTelefone: telefone },
+        });
+        await tx.telefoneCliente.deleteMany({
+          where: { idCliente: id, idTelefoneCliente: { not: telefoneExistente.idTelefoneCliente } },
+        });
+      } else {
+        await tx.telefoneCliente.create({ data: { idCliente: id, nrTelefone: telefone } });
+      }
+
+      return tx.cliente.findUnique({
+        where: { idCliente: id },
+        include: { telefones: true, usuario: { select: { noEmail: true } } },
+      });
+    });
+
+    return res.json({ message: "Dados atualizados com sucesso!", cliente: clienteAtualizado });
+  } catch (error: any) {
+    if (error?.code === "P2002") {
+      return res.status(409).json({ error: "Este e-mail já está sendo usado por outra conta." });
+    }
+    console.error("Erro ao atualizar dados do cliente:", error);
+    return res.status(500).json({ error: "Não foi possível atualizar seus dados." });
+  }
+});
+
 // Listar pedidos de um cliente
 app.get("/clientes/:id/pedidos", async (req, res) => {
   try {
@@ -543,6 +680,7 @@ app.get("/clientes/:id/pedidos", async (req, res) => {
       },
     });
 
+    res.setHeader("Cache-Control", "no-store");
     return res.json(pedidos);
   } catch (error) {
     console.error("Erro ao buscar pedidos do cliente:", error);
@@ -666,20 +804,24 @@ app.post("/register", async (req, res) => {
   try {
     console.log("Dados recebidos no cadastro:", req.body);
 
-    const { nome, email, senha, tipoUsuario, cnpj, nomeLoja } = req.body;
+    const { nome, senha, tipoUsuario, cnpj, nomeLoja } = req.body;
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
 
     // Validação básica
     if (!email || !senha || !tipoUsuario) {
       return res.status(400).json({ error: "Preencha os campos obrigatórios." });
     }
+    if (email.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Informe um e-mail válido com até 150 caracteres." });
+    }
 
     // 1. Verifica se o e-mail já existe
-    const usuarioExiste = await prisma.usuario.findUnique({
-      where: { noEmail: email },
+    const usuarioExiste = await prisma.usuario.findFirst({
+      where: { noEmail: { equals: email, mode: "insensitive" } },
     });
 
     if (usuarioExiste) {
-      return res.status(400).json({ error: "Este e-mail já está cadastrado." });
+      return res.status(409).json({ error: "Este e-mail já está cadastrado." });
     }
 
   
@@ -783,6 +925,9 @@ app.post("/register", async (req, res) => {
     }
 
   } catch (error: any) {
+    if (error?.code === "P2002") {
+      return res.status(409).json({ error: "Este e-mail já está cadastrado." });
+    }
     console.error("ERRO COMPLETO DO PRISMA:", error);
     return res.status(500).json({ error: error.message || "Erro interno ao processar o cadastro." });
   }
