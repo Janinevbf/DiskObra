@@ -326,23 +326,20 @@ select {
 
 /* auth */
 .auth {
-  min-height: 100vh; /* Garante que o fundo ocupe toda a altura da tela */
+  min-height: 100vh; 
   
-  /* Altere 'img/fundo-obra.jpg' para o caminho real da sua imagem */
   background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('img/Fundo.jpg');
   
-  background-size: cover;       /* Faz a imagem preencher toda a área sem esticar */
-  background-position: center;  /* Centraliza a imagem */
-  background-repeat: no-repeat; /* Evita repetição */
+  background-size: cover;       
+  background-position: center;  
+  background-repeat: no-repeat; 
   
-  /* Centraliza a caixa de login (.box) */
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
 }
 
-/* Garante que o formulário fique legível por cima da imagem */
 .auth{
   background-color: #ffffff;
   border-radius: 12px;
@@ -1393,7 +1390,62 @@ main {
     cursor: pointer;
     width: 100%;
     margin: 6px 0 14px;
-    text-align: left
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+
+.up img{
+    width: 30px;
+    height: 30px
+}
+
+.dias-funcionamento {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dias-checkboxes {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.dias-checkboxes label {
+    cursor: pointer;
+}
+
+.dias-checkboxes input {
+    display: none;
+}
+
+.dias-checkboxes span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink);
+    font-size: 13px;
+    transition: .2s;
+}
+
+.dias-checkboxes input:checked + span {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+}
+
+.dias-checkboxes span:hover {
+    border-color: var(--orange);
 }
 
 .store-logo-controls {
@@ -1669,6 +1721,12 @@ main {
     white-space: nowrap
 }
 
+.btn-or {
+    white-space: nowrap;
+    font-size: 14px;
+    padding: 13px 20px;
+}
+
 .dep-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1717,7 +1775,17 @@ main {
 
 .dep-line {
     font-size: 16px;
-    color: #444
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+}
+
+.dep-line img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
 }
 
 .dep-foot {
@@ -1820,5 +1888,341 @@ main {
 
     .cart table {
         font-size: 14px
+    }
+}
+
+/* Recuperar Senha */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.recuperar-senha, .redefinir-senha {
+  background-image: url('img/Fundo.jpg'); 
+}
+
+.container {
+    min-height: calc(100vh - 112px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.card-recuperacao {
+    width: 535px;
+    min-height: 445px;
+    background: rgba(245, 245, 245, 0.94);
+    padding: 42px 34px 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.card-recuperacao h1 {
+    color: var(--navy);
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.descricao {
+    color: var(--ink);
+    font-size: 19px;
+    line-height: 1.35;
+    max-width: 420px;
+    margin-bottom: 33px;
+}
+
+#formRecuperarSenha {
+    width: 100%;
+}
+
+.campo-email img{
+    width: 25px;
+    height: 25px;
+}
+
+.campo-email {
+    width: 100%;
+    height: 54px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+}
+
+.campo-email svg {
+    width: 30px;
+    height: 34px;
+    fill: #b9b9b9;
+    stroke: #b9b9b9;
+    flex-shrink: 0;
+}
+
+.campo-email input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 19px;
+    color: var(--ink);
+}
+
+.campo-email input::placeholder {
+    color: #a5a5a5;
+}
+
+.btn-enviar {
+    width: 100%;
+    height: 50px;
+    margin-top: 46px;
+    border: none;
+    border-radius: 45px;
+    background: var(--orange);
+    color: #fff;
+    font-family: inherit;
+    font-size: 23px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-enviar:hover {
+    background: #e65300;
+}
+
+.btn-enviar svg {
+    width: 48px;
+    height: 48px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.voltar-login {
+    margin-top: 29px;
+    color: var(--ink);
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.voltar-login a {
+    color: #172e40;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.voltar-login a:hover {
+    color: var(--orange);
+}
+
+@media (max-width: 700px) {
+    .container {
+        min-height: calc(100vh - 90px);
+        padding: 30px 15px;
+    }
+    .card-recuperacao {
+        width: 100%;
+        max-width: 535px;
+
+        padding: 35px 22px;
+    }
+    .card-recuperacao h1 {
+        font-size: 30px;
+    }
+    .descricao {
+        font-size: 16px;
+    }
+    .campo-email input {
+        font-size: 15px;
+    }
+    .btn-enviar {
+        height: 62px;
+        font-size: 19px;
+        margin-top: 30px;
+    }
+    .voltar-login {
+        font-size: 14px;
+        white-space: normal;
+    }
+}
+
+/* Redefinir Senha */
+
+:root {
+    --navy: #003366;
+    --orange: #ff6000;
+    --ink: #263746;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    min-height: calc(100vh - 112px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.card-redefinir-senha {
+    width: 535px;
+    min-height: 445px;
+    background: rgba(245, 245, 245, 0.94);
+    padding: 42px 34px 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.card-redefinir-senha h1 {
+    color: var(--navy);
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.info {
+    color: var(--ink);
+    font-size: 19px;
+    line-height: 1.35;
+    max-width: 420px;
+    margin-bottom: 33px;
+}
+
+#formRedefinirSenha {
+    width: 100%;
+}
+
+.campo-senha {
+    width: 100%;
+    height: 54px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+}
+
+.campo-senha svg {
+    width: 30px;
+    height: 34px;
+    fill: #b9b9b9;
+    stroke: #b9b9b9;
+    flex-shrink: 0;
+}
+
+.campo-senha input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 19px;
+    color: var(--ink);
+}
+
+.campo-senha input::placeholder {
+    color: #a5a5a5;
+}
+
+.btn-enviar-senha {
+    width: 100%;
+    height: 50px;
+    margin-top: 46px;
+    border: none;
+    border-radius: 45px;
+    background: var(--orange);
+    color: #fff;
+    font-family: inherit;
+    font-size: 23px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-enviar-senha:hover {
+    background: #e65300;
+}
+
+.btn-enviar-senha svg {
+    width: 48px;
+    height: 48px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.voltar-login {
+    margin-top: 29px;
+    color: var(--ink);
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.voltar-login a {
+    color: #172e40;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.voltar-login a:hover {
+    color: var(--orange);
+}
+
+.campo-senha img{
+    width: 25px;
+    height: 25px;
+}
+
+@media (max-width: 700px) {
+    .container {
+        min-height: calc(100vh - 90px);
+        padding: 30px 15px;
+    }
+    .card-redefinir-senha {
+        width: 100%;
+        max-width: 535px;
+
+        padding: 35px 22px;
+    }
+    .card-redefinir-senha h1 {
+        font-size: 30px;
+    }
+    .info {
+        font-size: 16px;
+    }
+    .campo-senha input {
+        font-size: 15px;
+    }
+    .btn-enviar-senha {
+        height: 62px;
+        font-size: 19px;
+        margin-top: 30px;
+    }
+    .voltar-login {
+        font-size: 14px;
+        white-space: normal;
     }
 }
