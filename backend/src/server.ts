@@ -37,6 +37,10 @@ class EstoqueIndisponivelError extends Error {
   statusCode = 409;
 }
 
+class PedidoMultiplasLojasError extends Error {
+  statusCode = 400;
+}
+
 // Rota de Teste: Listar Lojas
 app.get("/lojas", async (req, res) => {
   try {
@@ -983,6 +987,11 @@ app.post("/pedidos", async (req, res) => {
       const produtos = await tx.produto.findMany({ where: { cdProduto: { in: idsProdutos } } });
       const produtosPorId = new Map(produtos.map(produto => [produto.cdProduto, produto]));
 
+      // A validação usa a loja vinculada aos produtos no banco, não os dados enviados pelo cliente.
+      if (produtos.length === idsProdutos.length && new Set(produtos.map(produto => produto.idLoja)).size > 1) {
+        throw new PedidoMultiplasLojasError("Cada compra pode conter produtos de apenas uma loja.");
+      }
+
       for (const cdProduto of idsProdutos) {
         const produto = produtosPorId.get(cdProduto);
         const quantidade = quantidades.get(cdProduto)!;
@@ -1091,6 +1100,9 @@ app.post("/pedidos", async (req, res) => {
 
     return res.status(201).json({ message: "Pedido realizado com sucesso!", ...resultado });
   } catch (error: any) {
+    if (error instanceof PedidoMultiplasLojasError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     if (error instanceof EstoqueIndisponivelError) {
       return res.status(error.statusCode).json({ error: error.message });
     }

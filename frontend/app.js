@@ -153,10 +153,13 @@ const setCart = cart => localStorage.setItem(CART_KEY, JSON.stringify(cart));
 const addToCart = (produto, qtd = 1) => {
     const cart = getCart();
     const item = cart.find(i => Number(i.cdProduto) === Number(produto.cdProduto));
+    const idLoja = Number(produto.idLoja ?? produto.loja?.idLoja);
+    if (!Number.isInteger(idLoja) || idLoja <= 0) return 'invalid-store';
+    if (cart.some(i => Number(i.idLoja) !== idLoja)) return 'different-store';
     const estoqueDisponivel = Number(produto.qtProdutoEstoque);
     const quantidadeNoCarrinho = (item?.qtProdutoRetirado || 0) + qtd;
     if (!Number.isInteger(estoqueDisponivel) || estoqueDisponivel <= 0 || quantidadeNoCarrinho > estoqueDisponivel) {
-        return false;
+        return 'unavailable';
     }
     if (item) {
         item.qtProdutoRetirado += qtd;
@@ -169,13 +172,13 @@ const addToCart = (produto, qtd = 1) => {
             vlProdutoUnitario: Number(produto.vlProdutoUnitario),
             qtProdutoRetirado: qtd,
             qtProdutoEstoque: Number(produto.qtProdutoEstoque),
-            idLoja: produto.idLoja,
+            idLoja,
             noLoja: produto.loja?.noLoja || '',
             dsImagem: produto.dsImagem || null
         });
     }
     setCart(cart);
-    return true;
+    return 'added';
 };
 
 const produtosCache = new Map();
@@ -359,10 +362,16 @@ document.addEventListener('click', async e => {
         if (!id && produtoDetalhe) id = Number(produtoDetalhe.cdProduto);
         const produto = produtosCache.get(id) || (produtoDetalhe && Number(produtoDetalhe.cdProduto) === id ? produtoDetalhe : null);
         if (produto) {
-            if (!addToCart(produto)) {
-                mostrarAviso(Number(produto.qtProdutoEstoque) > 0
+            const resultado = addToCart(produto);
+            if (resultado !== 'added') {
+                const mensagem = resultado === 'different-store'
+                    ? 'Seu carrinho já tem produtos de outra loja. Finalize ou esvazie o carrinho antes de comprar em uma loja diferente.'
+                    : resultado === 'invalid-store'
+                        ? 'Não foi possível identificar a loja deste produto. Atualize a página e tente novamente.'
+                        : Number(produto.qtProdutoEstoque) > 0
                     ? `Há somente ${produto.qtProdutoEstoque} unidade(s) disponível(is) deste produto.`
-                    : 'Produto indisponível no momento.', 'warning');
+                    : 'Produto indisponível no momento.';
+                mostrarAviso(mensagem, 'warning');
                 return;
             }
             add.textContent = 'Adicionado ✓';
@@ -534,17 +543,29 @@ if (ct) {
                 const produtoAtual = produtosAtuais.find(produto => Number(produto.cdProduto) === Number(item.cdProduto));
                 const estoqueAtual = produtoAtual ? Number(produtoAtual.qtProdutoEstoque) : 0;
                 item.qtProdutoEstoque = Number.isInteger(estoqueAtual) && estoqueAtual >= 0 ? estoqueAtual : 0;
+                if (produtoAtual) {
+                    item.idLoja = Number(produtoAtual.idLoja);
+                    item.noLoja = produtoAtual.loja?.noLoja || item.noLoja || '';
+                }
                 if (!produtoAtual || item.qtProdutoRetirado > item.qtProdutoEstoque) {
                     indisponiveis.push(`${item.noProduto || produtoAtual?.noProduto || 'Produto'}: solicitado ${item.qtProdutoRetirado}, disponível ${item.qtProdutoEstoque}`);
                 }
             }
             setCart(cart);
+            const idsLojasCarrinho = [...new Set(cart.map(item => Number(item.idLoja)).filter(id => Number.isInteger(id) && id > 0))];
+            if (idsLojasCarrinho.length > 1) {
+                draw();
+                throw new Error('Cada compra pode conter produtos de apenas uma loja. Remova os produtos das outras lojas para continuar.');
+            }
             if (indisponiveis.length) {
                 draw();
                 throw new Error(`Estoque insuficiente no momento. ${indisponiveis.join('; ')}. Ajuste as quantidades e tente novamente.`);
             }
 
             const idsLojas = [...new Set(cart.map(item => Number(item.idLoja)).filter(Number.isInteger))];
+            if (idsLojas.length !== 1) {
+                throw new Error('Não foi possível identificar uma única loja para esta compra. Atualize o carrinho e tente novamente.');
+            }
             const lojas = await getJson(`${API_URL}/lojas`);
             const lojasSelecionadas = idsLojas.map(id => lojas.find(loja => Number(loja.idLoja) === id));
             if (lojasSelecionadas.some(loja => !loja)) {
@@ -611,7 +632,7 @@ if (ct) {
             const avisoEstoque = (resultado.estoqueEsgotado || []).length
                 ? `<p class="stock-alert">Atenção: o estoque de ${escapeHtml(resultado.estoqueEsgotado.map(item => item.noProduto).join(', '))} zerou. Seu pedido foi registrado; avise a loja pelo botão do WhatsApp abaixo.</p>`
                 : '';
-            feedback.innerHTML = `<div class="checkout-success"><b>Pedido #${Number(idPedido)} criado.</b><p>${tpPagamento}. O pagamento só será confirmado depois que a loja conferir o recebimento.</p>${avisoEstoque}<p>Abra o WhatsApp de cada loja e toque em Enviar:</p><div class="checkout-links">${linksWhatsApp}</div><a href="conta.html#pedidos">Ver meus pedidos</a></div>`;
+            feedback.innerHTML = `<div class="checkout-success"><b>Pedido #${Number(idPedido)} criado.</b><p>${tpPagamento}. O pagamento só será confirmado depois que a loja conferir o recebimento.</p>${avisoEstoque}<p>Abra o WhatsApp da loja e toque em Enviar:</p><div class="checkout-links">${linksWhatsApp}</div><a href="conta.html#pedidos">Ver meus pedidos</a></div>`;
             feedback.classList.add('success');
             $('#buy').textContent = 'Pedido realizado';
             feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
