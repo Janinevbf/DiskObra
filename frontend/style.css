@@ -462,21 +462,29 @@ main {
 }
 
 .pc .img {
-    height: 200px;
+    width: auto;
+    height: 220px;
     margin: 18px 30px 12px;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #fafafa;
-    font-size: 90px;
-    text-decoration: none
+    overflow: hidden;
+}
+
+.pc .img .product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain !important;
+    object-position: center;
 }
 
 .product-image {
-    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    background: #fff
+    object-position: center;
+    display: block;
 }
 
 .pc h3 {
@@ -628,7 +636,7 @@ main {
 
 .side {
     background: var(--card);
-    padding: 20px 30px;
+    padding: 20px 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -894,25 +902,86 @@ main {
     font-size: 19px
 }
 
+.cart table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.cart th,
+.cart td {
+    box-sizing: border-box;
+    vertical-align: middle;
+    padding: 14px 8px;
+    border-bottom: 3px solid var(--line);
+}
+
+.cart th {
+    text-align: left;
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+/* Largura de cada coluna */
+.cart th:nth-child(1),
+.cart td:nth-child(1) {
+    width: 38%;
+}
+
+.cart th:nth-child(2),
+.cart td:nth-child(2) {
+    width: 15%;
+}
+
+.cart th:nth-child(3),
+.cart td:nth-child(3) {
+    width: 22%;
+}
+
+.cart th:nth-child(4),
+.cart td:nth-child(4) {
+    width: 15%;
+}
+
+.cart th:nth-child(5),
+.cart td:nth-child(5) {
+    width: 10%;
+}
+
+/* Alinhamento das imagens */
 .cart td:first-child {
-    display: flex;
-    align-items: center;
-    gap: 14px
+    display: table-cell;
+}
+
+.cart td:first-child > * {
+    vertical-align: middle;
+}
+
+/* Evita conteúdo ultrapassando as colunas */
+.cart td {
+    overflow-wrap: break-word;
 }
 
 .cart .th {
     width: 76px;
     height: 76px;
+    min-width: 76px;
+    flex-shrink: 0;
     background: #fafafa;
-    display: grid;
-    place-items: center;
-    font-size: 40px
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 40px;
 }
 
 .cart-product-image {
+    width: 100%;
+    height: 100%;
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain
+    object-fit: contain;
+    display: block;
 }
 
 .qty {
@@ -979,7 +1048,7 @@ main {
 
 .btn-gr {
     display: block;
-    margin: 28px auto 18px;
+    margin: 5px auto 18px;
     background: var(--green);
     color: #fff;
     font-weight: 700;
@@ -987,7 +1056,13 @@ main {
     border-radius: 10px;
     padding: 16px 26px;
     font-size: 19px;
-    cursor: pointer
+    cursor: pointer;
+}
+
+#salvarProduto {
+    margin-top: 0 !important;
+    position: relative;
+    top: -20px;
 }
 
 .sum .cont {
@@ -1011,7 +1086,7 @@ main {
 }
 
 .dep .side {
-    min-height: 600px;
+    min-height: 250px;
     margin-top: 0
 }
 
@@ -1346,22 +1421,30 @@ main {
     color: #a51f1f
 }
 
+/* Espaço fixo para a imagem enviada */
 .product-image-preview {
-    width: min(100%, 420px);
+    width: 100%;
+    max-width: 400px;
     height: 260px;
     margin-top: 12px;
     padding: 12px;
-    display: grid;
-    place-items: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
     background: #f7f8fa;
     border: 1px solid var(--line);
-    border-radius: 10px
+    border-radius: 10px;
 }
 
+/* Imagem limitada ao espaço */
 .product-image-preview img {
     width: 100%;
     height: 100%;
-    object-fit: contain
+    object-fit: contain;
+    object-position: center;
 }
 
 .image-help {
@@ -1951,14 +2034,6 @@ main {
     gap: 12px;
 }
 
-.campo-email svg {
-    width: 30px;
-    height: 34px;
-    fill: #b9b9b9;
-    stroke: #b9b9b9;
-    flex-shrink: 0;
-}
-
 .campo-email input {
     width: 100%;
     height: 100%;
@@ -1993,16 +2068,6 @@ main {
 
 .btn-enviar:hover {
     background: #e65300;
-}
-
-.btn-enviar svg {
-    width: 48px;
-    height: 48px;
-    fill: none;
-    stroke: #fff;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .voltar-login {
@@ -2109,14 +2174,6 @@ main {
     gap: 12px;
 }
 
-.campo-senha svg {
-    width: 30px;
-    height: 34px;
-    fill: #b9b9b9;
-    stroke: #b9b9b9;
-    flex-shrink: 0;
-}
-
 .campo-senha input {
     width: 100%;
     height: 100%;
@@ -2151,16 +2208,6 @@ main {
 
 .btn-enviar-senha:hover {
     background: #e65300;
-}
-
-.btn-enviar-senha svg {
-    width: 48px;
-    height: 48px;
-    fill: none;
-    stroke: #fff;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .voltar-login {
