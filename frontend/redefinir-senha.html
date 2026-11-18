@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redefinir senha · DiskObra</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="css/recuperar-senha.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="img/LogotipoDiskObra.png">
 </head>
 
@@ -25,12 +25,17 @@
             <form id="formRedefinirSenha">
                 <div class="campo-senha">
                     <img src="img/icons/lock.png" alt="">
-                    <input type="password" id="novaSenha" name="novaSenha" placeholder="Digite sua nova senha" required>
+                    <input type="password" id="novaSenha" name="novaSenha" placeholder="Digite sua nova senha (mínimo de 8 caracteres)" minlength="8" autocomplete="new-password" required>
+                </div>
+                <div class="campo-senha">
+                    <img src="img/icons/lock.png" alt="">
+                    <input type="password" id="confirmarNovaSenha" name="confirmarNovaSenha" placeholder="Confirme sua nova senha" minlength="8" autocomplete="new-password" required>
                 </div>
                 <button type="submit" class="btn-enviar-senha">
                     Redefinir senha
                 </button>
             </form>
+            <p class="msg" id="feedbackRedefinicao" role="status" aria-live="polite"></p>
             <p class="voltar-login">
                 Lembrou sua senha?
                 <a href="login.html">Voltar para o login</a>

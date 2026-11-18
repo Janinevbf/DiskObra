@@ -4,7 +4,7 @@ import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import { randomUUID } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,6 +32,38 @@ app.use("/uploads/lojas", express.static(lojaLogoDirectory, { maxAge: "1d" }));
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
+const resetTokenSecret = process.env.RESET_TOKEN_SECRET || (process.env.NODE_ENV === "production" ? "" : randomBytes(32).toString("hex"));
+
+const hashSenha = (senha: string) => createHash("sha256").update(senha).digest();
+const criarTokenRedefinicao = (idUsuario: number, senhaAtual: string) => {
+  const payload = Buffer.from(JSON.stringify({
+    idUsuario,
+    exp: Date.now() + 30 * 60 * 1000,
+    versaoSenha: hashSenha(senhaAtual).toString("hex"),
+  })).toString("base64url");
+  const assinatura = createHmac("sha256", resetTokenSecret).update(payload).digest("base64url");
+  return `${payload}.${assinatura}`;
+};
+
+const lerTokenRedefinicao = (token: string) => {
+  const [payload, assinatura, extra] = token.split(".");
+  if (!payload || !assinatura || extra !== undefined || !resetTokenSecret) return null;
+  const assinaturaEsperada = createHmac("sha256", resetTokenSecret).update(payload).digest();
+  let assinaturaRecebida: Buffer;
+  try {
+    assinaturaRecebida = Buffer.from(assinatura, "base64url");
+  } catch {
+    return null;
+  }
+  if (assinaturaRecebida.length !== assinaturaEsperada.length || !timingSafeEqual(assinaturaRecebida, assinaturaEsperada)) return null;
+  try {
+    const dados = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!Number.isInteger(dados.idUsuario) || dados.idUsuario <= 0 || !Number.isFinite(dados.exp) || dados.exp <= Date.now() || !/^[a-f0-9]{64}$/i.test(dados.versaoSenha)) return null;
+    return dados as { idUsuario: number; exp: number; versaoSenha: string };
+  } catch {
+    return null;
+  }
+};
 
 class EstoqueIndisponivelError extends Error {
   statusCode = 409;
@@ -1223,6 +1255,139 @@ app.post("/pedidos/:id/confirmar", async (req, res) => {
 });
 
 // Rota de Login Geral (Cliente, Construtora ou Admin)
+app.post("/auth/solicitar-redefinicao", async (req, res) => {
+  const mensagem = "Se os dados corresponderem a uma conta, enviaremos as instruções para o e-mail cadastrado.";
+  try {
+    if (!resetTokenSecret) {
+      return res.status(503).json({ error: "A redefinição de senha não está configurada no servidor." });
+    }
+
+    const baseConfigurada = process.env.APP_BASE_URL?.trim();
+    const origem = req.get("origin");
+    let baseReferer = "";
+    if (process.env.NODE_ENV !== "production" && req.get("referer")) {
+      try {
+        const refererUrl = new URL(req.get("referer")!);
+        if (!origem || refererUrl.origin === new URL(origem).origin) {
+          baseReferer = new URL(".", refererUrl).toString();
+        }
+      } catch {
+        // Se o Referer não for válido, usa a origem configurada abaixo.
+      }
+    }
+    const baseApp = process.env.NODE_ENV === "production"
+      ? baseConfigurada || ""
+      : baseReferer || baseConfigurada || origem || "http://localhost:5500";
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
+    const emailFrom = process.env.EMAIL_FROM?.trim();
+    if (!baseApp || (process.env.NODE_ENV === "production" && (!resendApiKey || !emailFrom))) {
+      return res.status(503).json({ error: "A redefinição de senha não está configurada no servidor." });
+    }
+
+    let appUrl: URL;
+    try {
+      appUrl = new URL(baseApp);
+      if (!['http:', 'https:'].includes(appUrl.protocol)) throw new Error("Protocolo inválido.");
+    } catch {
+      return res.status(503).json({ error: "O endereço do site não está configurado corretamente." });
+    }
+
+    const identificador = typeof req.body?.identificador === "string" ? req.body.identificador.trim() : "";
+    if (!identificador) return res.status(400).json({ error: "Informe seu e-mail, CPF ou CNPJ." });
+
+    let usuario;
+    if (identificador.includes("@")) {
+      usuario = await prisma.usuario.findFirst({
+        where: { noEmail: { equals: identificador.toLowerCase(), mode: "insensitive" } },
+        select: { idUsuario: true, noEmail: true, dsSenha: true, tpUsuario: true },
+      });
+    } else {
+      const numeros = identificador.replace(/\D/g, "");
+      if (numeros.length === 11) {
+        usuario = await prisma.usuario.findFirst({
+          where: { cliente: { is: { nrCpf: numeros } } },
+          select: { idUsuario: true, noEmail: true, dsSenha: true, tpUsuario: true },
+        });
+      } else if (numeros.length === 14) {
+        const cnpjFormatado = numeros.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+        usuario = await prisma.usuario.findFirst({
+          where: { loja: { is: { nrCnpj: { in: [numeros, cnpjFormatado] } } } },
+          select: { idUsuario: true, noEmail: true, dsSenha: true, tpUsuario: true },
+        });
+      }
+    }
+
+    if (!usuario || usuario.tpUsuario === "ADMIN") return res.json({ message: mensagem });
+
+    const token = criarTokenRedefinicao(usuario.idUsuario, usuario.dsSenha);
+    const caminhoFrontend = appUrl.pathname.replace(/\/+$/, "");
+    const link = new URL(`${caminhoFrontend}/redefinir-senha.html`, appUrl.origin).toString() + `?token=${encodeURIComponent(token)}`;
+    if (resendApiKey && emailFrom) {
+      const respostaEmail = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: emailFrom,
+          to: [usuario.noEmail],
+          subject: "Redefinição de senha · DiskObra",
+          text: `Recebemos uma solicitação para redefinir sua senha. Acesse este link em até 30 minutos: ${link}\n\nSe você não solicitou a redefinição, ignore esta mensagem.`,
+          html: `<p>Recebemos uma solicitação para redefinir sua senha.</p><p><a href="${link.replace(/&/g, "&amp;")}">Criar uma nova senha</a></p><p>Este link expira em 30 minutos. Se você não solicitou a redefinição, ignore esta mensagem.</p>`,
+        }),
+      });
+      if (!respostaEmail.ok) {
+        console.error("Falha ao enviar e-mail de redefinição. Status do provedor:", respostaEmail.status);
+        return res.status(502).json({ error: "Não foi possível enviar o e-mail agora. Tente novamente mais tarde." });
+      }
+      return res.json({ message: mensagem });
+    }
+
+    // Em desenvolvimento, permite testar o fluxo sem um provedor de e-mail.
+    return res.json({ message: mensagem, resetUrl: link });
+  } catch (error) {
+    console.error("Erro ao solicitar redefinição de senha:", error);
+    return res.status(500).json({ error: "Não foi possível processar a solicitação." });
+  }
+});
+
+app.post("/auth/redefinir-senha", async (req, res) => {
+  try {
+    const token = typeof req.body?.token === "string" ? req.body.token : "";
+    const novaSenha = typeof req.body?.novaSenha === "string" ? req.body.novaSenha : "";
+    if (novaSenha.length < 8 || novaSenha.length > 255) {
+      return res.status(400).json({ error: "A nova senha deve ter entre 8 e 255 caracteres." });
+    }
+
+    const dadosToken = lerTokenRedefinicao(token);
+    if (!dadosToken) return res.status(400).json({ error: "Este link é inválido ou expirou. Solicite uma nova redefinição." });
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { idUsuario: dadosToken.idUsuario },
+      select: { idUsuario: true, dsSenha: true, tpUsuario: true },
+    });
+    if (!usuario || usuario.tpUsuario === "ADMIN" || !timingSafeEqual(hashSenha(usuario.dsSenha), Buffer.from(dadosToken.versaoSenha, "hex"))) {
+      return res.status(400).json({ error: "Este link é inválido ou expirou. Solicite uma nova redefinição." });
+    }
+    if (novaSenha === usuario.dsSenha) {
+      return res.status(400).json({ error: "Escolha uma senha diferente da atual." });
+    }
+
+    const atualizacao = await prisma.usuario.updateMany({
+      where: { idUsuario: usuario.idUsuario, dsSenha: usuario.dsSenha },
+      data: { dsSenha: novaSenha },
+    });
+    if (atualizacao.count !== 1) {
+      return res.status(400).json({ error: "Este link já foi utilizado. Solicite uma nova redefinição." });
+    }
+    return res.json({ message: "Senha redefinida com sucesso. Você já pode entrar com a nova senha." });
+  } catch (error) {
+    console.error("Erro ao redefinir senha:", error);
+    return res.status(500).json({ error: "Não foi possível redefinir a senha." });
+  }
+});
+
 app.post("/login", async (req, res) => {
   try {
     const { email, senha } = req.body;

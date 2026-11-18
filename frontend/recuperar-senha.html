@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redefinir senha · DiskObra</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="css/recuperar-senha.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="img/LogotipoDiskObra.png">
 </head>
 <body class="recuperar-senha">
@@ -18,17 +18,19 @@
         <section class="card-recuperacao">
             <h1>Redefinir senha</h1>
             <p class="descricao">
-                Digite seu e-mail ou CPF para receber o link de redefinição
+                Informe o e-mail cadastrado, CPF do cliente ou CNPJ do dono da loja. Enviaremos um link para o e-mail da conta.
             </p>
             <form id="formRecuperarSenha">
                 <div class="campo-email">
                     <img src="img/icons/profile.png" alt="">
-                    <input type="text" id="emailCpf" name="emailCpf" placeholder="Digite seu e-mail ou CPF" required>
+                    <input type="text" id="identificadorRecuperacao" name="identificador" placeholder="E-mail, CPF ou CNPJ" autocomplete="username" required>
                 </div>
                 <button type="submit" class="btn-enviar">
                     Enviar link de redefinição
                 </button>
             </form>
+            <p class="msg" id="feedbackRecuperacao" role="status" aria-live="polite"></p>
+            <a id="linkRedefinicaoDev" href="#" hidden>Testar link de redefinição (desenvolvimento)</a>
             <p class="voltar-login">
                 Lembrou sua senha?
                 <a href="login.html">Voltar para o login</a>

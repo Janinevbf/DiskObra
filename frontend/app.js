@@ -774,6 +774,85 @@ $$('form[data-auth], #formLogin, #formCadastro').forEach(f => f.addEventListener
     }
 }));
 
+const formRecuperarSenha = $('#formRecuperarSenha');
+if (formRecuperarSenha) {
+    const feedback = $('#feedbackRecuperacao');
+    const linkDev = $('#linkRedefinicaoDev');
+    formRecuperarSenha.addEventListener('submit', async e => {
+        e.preventDefault();
+        const botao = formRecuperarSenha.querySelector('[type="submit"]');
+        const identificador = $('#identificadorRecuperacao').value.trim();
+        feedback.textContent = '';
+        feedback.className = 'msg';
+        linkDev.hidden = true;
+        botao.disabled = true;
+        try {
+            const resultado = await getJson(`${API_URL}/auth/solicitar-redefinicao`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identificador })
+            });
+            feedback.textContent = resultado.message || 'Se os dados corresponderem a uma conta, enviaremos as instruções para o e-mail cadastrado.';
+            feedback.classList.add('success');
+            if (resultado.resetUrl) {
+                linkDev.href = resultado.resetUrl;
+                linkDev.hidden = false;
+            }
+        } catch (error) {
+            feedback.textContent = error.message || 'Não foi possível solicitar a redefinição.';
+            feedback.classList.add('error');
+        } finally {
+            botao.disabled = false;
+        }
+    });
+}
+
+const formRedefinirSenha = $('#formRedefinirSenha');
+if (formRedefinirSenha) {
+    const feedback = $('#feedbackRedefinicao');
+    const botao = formRedefinirSenha.querySelector('[type="submit"]');
+    const token = new URLSearchParams(location.search).get('token') || '';
+    if (!token) {
+        feedback.textContent = 'Link inválido. Solicite uma nova redefinição de senha.';
+        feedback.className = 'msg error';
+        botao.disabled = true;
+    }
+    formRedefinirSenha.addEventListener('submit', async e => {
+        e.preventDefault();
+        const novaSenha = $('#novaSenha').value;
+        const confirmarNovaSenha = $('#confirmarNovaSenha').value;
+        feedback.textContent = '';
+        feedback.className = 'msg';
+        if (!token) return;
+        if (novaSenha.length < 8) {
+            feedback.textContent = 'A senha precisa ter pelo menos 8 caracteres.';
+            feedback.classList.add('error');
+            return;
+        }
+        if (novaSenha !== confirmarNovaSenha) {
+            feedback.textContent = 'As senhas não conferem.';
+            feedback.classList.add('error');
+            return;
+        }
+
+        botao.disabled = true;
+        try {
+            const resultado = await getJson(`${API_URL}/auth/redefinir-senha`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, novaSenha })
+            });
+            feedback.textContent = resultado.message || 'Senha redefinida com sucesso. Você já pode entrar com a nova senha.';
+            feedback.classList.add('success');
+            formRedefinirSenha.reset();
+        } catch (error) {
+            feedback.textContent = error.message || 'Não foi possível redefinir a senha.';
+            feedback.classList.add('error');
+            botao.disabled = false;
+        }
+    });
+}
+
 /* cadastro de produto da loja */
 const comprimirImagem = arquivo => new Promise((resolve, reject) => {
     if (!arquivo || !/^image\/(jpeg|png|webp)$/i.test(arquivo.type)) {

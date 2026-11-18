@@ -38,6 +38,10 @@ Marketplace de materiais de construção que conecta clientes e lojas. O reposit
 
 Rotas principais: `GET /lojas`, `GET/PUT /lojas/:id`, `GET /lojas/:id/pedidos`, `GET /produtos`, `GET /produtos/:id`, `POST/PUT/DELETE /produtos`, `POST /produtos/:id/imagem`, `POST /register`, `POST /login`, `POST /pedidos`, `GET /clientes/:id/pedidos` e rotas de endereço/favoritos.
 
+### Redefinição de senha
+
+A recuperação atende clientes (e-mail ou CPF) e donos de loja (e-mail ou CNPJ). Em desenvolvimento, sem provedor de e-mail, a tela mostra um link de teste. Em produção, configure no `backend/.env` `APP_BASE_URL` (URL pública do frontend), `RESET_TOKEN_SECRET` (segredo aleatório longo), `RESEND_API_KEY` e `EMAIL_FROM` para enviar o link por e-mail. O link expira em 30 minutos e só pode ser usado uma vez.
+
 ## Requisitos
 
 - Node.js **22.13 ou superior** (recomendado para o Expo SDK 58).
