@@ -50,18 +50,19 @@
             </div>
             <h2 style="font-size:22px;margin:24px 0 10px">Horário de funcionamento</h2>
             <div class="fr">
-                </select></label><label>Aberto em feriados<select>
-                        <option>Sim</option>
-                        <option>Não</option>
+                <label>Abre em feriados
+                    <select id="lojaAbreFeriados">
+                        <option value="true">Sim</option>
+                        <option value="false" selected>Não</option>
                     </select></label>
                 <label>Abre
                     <input type="time" value="08:00" id="lojaAbre">
                 </label>
                 <label>Fecha
-                    <input type="time" value="20:30">
+                    <input type="time" value="20:30" id="lojaFecha">
                 </label>
                 <div class="dias-funcionamento">
-                    <label>Dias abertos (selecione os dias)</label>
+                    <span>Dias abertos (selecione os dias)</span>
                     <div class="dias-checkboxes">
                         <label><input type="checkbox" name="dias[]" value="seg"><span>Seg</span></label>
                         <label><input type="checkbox" name="dias[]" value="ter"><span>Ter</span></label>

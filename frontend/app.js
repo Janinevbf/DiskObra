@@ -12,6 +12,18 @@ const API_URL = window.DISKOBRA_API_URL || `http://${location.hostname || 'local
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[char]));
+const diasSemanaFuncionamento = [
+    ['seg', 'Seg'], ['ter', 'Ter'], ['qua', 'Qua'], ['qui', 'Qui'],
+    ['sex', 'Sex'], ['sab', 'Sáb'], ['dom', 'Dom']
+];
+const resumoFuncionamento = loja => {
+    const diasAbertos = Array.isArray(loja?.diasFuncionamento) ? loja.diasFuncionamento : [];
+    if (!diasAbertos.length) return 'Horário não informado';
+    const dias = diasSemanaFuncionamento.filter(([valor]) => diasAbertos.includes(valor)).map(([, nome]) => nome);
+    const abre = loja.hrAbertura || '';
+    const fecha = loja.hrFechamento || '';
+    return `${dias.join(', ')} · ${abre && fecha ? `${abre} às ${fecha}` : 'horário não informado'}`;
+};
 
 const toastRegion = document.createElement('div');
 toastRegion.id = 'siteToastRegion';
@@ -322,7 +334,7 @@ if ($('.det') && !g) {
                 $('#detTitle').textContent = p.noProduto;
                 $('#detPrice').textContent = fmt(Number(p.vlProdutoUnitario));
                 const disponivel = Number(p.qtProdutoEstoque) > 0;
-                $('#detInfo').innerHTML = `<b>Loja:</b> ${p.loja?.noLoja || 'Não informada'}<br><b>Estoque:</b> ${disponivel ? `${p.qtProdutoEstoque} unidade(s)` : '<span class="stock-status unavailable">Produto indisponível</span>'}`;
+                $('#detInfo').innerHTML = `<b>Loja:</b> ${escapeHtml(p.loja?.noLoja || 'Não informada')}<br><b>Horário:</b> ${escapeHtml(resumoFuncionamento(p.loja))}<br><b>Feriados:</b> ${p.loja?.icAbreFeriados ? 'Abre' : 'Não abre'}<br><b>Estoque:</b> ${disponivel ? `${p.qtProdutoEstoque} unidade(s)` : '<span class="stock-status unavailable">Produto indisponível</span>'}`;
                 const add = $('.det [data-add]');
                 if (add) {
                     add.dataset.add = p.cdProduto;
@@ -674,6 +686,7 @@ if (depList) {
                     </div>
                     <p class="dep-line"><img src="img/icons/address.png" alt="Localização"> ${endereco}</p>
                     <p class="dep-line"><img src="img/icons/phone.png" alt="Telefone"> ${tel}</p>
+                    <p class="dep-line"><span aria-hidden="true">🕒</span> ${escapeHtml(resumoFuncionamento(l))} · ${l.icAbreFeriados ? 'Abre' : 'Não abre'} em feriados</p>
                     <div class="dep-foot">
                         <span class="tag t-ok">${qtd} produto(s)</span>
                         <a class="btn-or" href="produtos.html?loja=${l.idLoja}">Ver produtos</a>
@@ -1613,6 +1626,11 @@ if (salvarPerfil) {
             $('#lojaNumero').value = end.nrNumero || '';
             $('#lojaCidade').value = end.noCidade || '';
             $('#lojaUf').value = end.sgUf || '';
+            $('#lojaAbre').value = loja.hrAbertura || '';
+            $('#lojaFecha').value = loja.hrFechamento || '';
+            $('#lojaAbreFeriados').value = String(Boolean(loja.icAbreFeriados));
+            const diasAbertos = Array.isArray(loja.diasFuncionamento) ? loja.diasFuncionamento : [];
+            $$('input[name="dias[]"]').forEach(input => { input.checked = diasAbertos.includes(input.value); });
             mostrarLogo(loja.dsLogo ? imagemUrl(loja.dsLogo) : null);
         };
 
@@ -1699,7 +1717,11 @@ if (salvarPerfil) {
                     noEndereco: val('#lojaEndereco'),
                     nrNumero: val('#lojaNumero'),
                     noCidade: val('#lojaCidade'),
-                    sgUf: val('#lojaUf').toUpperCase()
+                    sgUf: val('#lojaUf').toUpperCase(),
+                    hrAbertura: val('#lojaAbre'),
+                    hrFechamento: val('#lojaFecha'),
+                    diasFuncionamento: $$('input[name="dias[]"]:checked').map(input => input.value),
+                    icAbreFeriados: $('#lojaAbreFeriados').value === 'true'
                 };
 
                 const res = await fetch(`${API_URL}/lojas/${sessao.lojaId}`, {

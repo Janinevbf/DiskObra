@@ -34,6 +34,10 @@ model Loja {
   noLoja        String          @db.VarChar(100)
   nrCnpj        String          @db.VarChar(25)
   dsLogo        String?         @db.VarChar(500)
+  hrAbertura    String?         @db.VarChar(5)
+  hrFechamento  String?         @db.VarChar(5)
+  diasFuncionamento String[]     @default([])
+  icAbreFeriados Boolean        @default(false)
   usuario       Usuario?        // Dono da loja
   produtos      Produto[]
   telefones     TelefoneLoja[]

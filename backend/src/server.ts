@@ -132,7 +132,43 @@ app.put("/lojas/:id", async (req, res) => {
       nrNumero,
       nrCep,
       email,
+      hrAbertura,
+      hrFechamento,
+      diasFuncionamento,
+      icAbreFeriados,
     } = req.body;
+
+    const diasPermitidos = new Set(["seg", "ter", "qua", "qui", "sex", "sab", "dom"]);
+    if (diasFuncionamento !== undefined && (
+      !Array.isArray(diasFuncionamento) ||
+      diasFuncionamento.some(dia => typeof dia !== "string" || !diasPermitidos.has(dia)) ||
+      new Set(diasFuncionamento).size !== diasFuncionamento.length
+    )) {
+      return res.status(400).json({ error: "Selecione dias de funcionamento válidos." });
+    }
+    if (icAbreFeriados !== undefined && typeof icAbreFeriados !== "boolean") {
+      return res.status(400).json({ error: "Informe se a loja abre em feriados." });
+    }
+
+    let aberturaNormalizada: string | null | undefined;
+    let fechamentoNormalizado: string | null | undefined;
+    if (hrAbertura !== undefined || hrFechamento !== undefined) {
+      const abertura = typeof hrAbertura === "string" ? hrAbertura.trim() : hrAbertura;
+      const fechamento = typeof hrFechamento === "string" ? hrFechamento.trim() : hrFechamento;
+      const formatoHora = /^([01]\d|2[0-3]):[0-5]\d$/;
+      if ((abertura && (typeof abertura !== "string" || !formatoHora.test(abertura))) ||
+          (fechamento && (typeof fechamento !== "string" || !formatoHora.test(fechamento)))) {
+        return res.status(400).json({ error: "Informe horários válidos no formato HH:MM." });
+      }
+      if (Boolean(abertura) !== Boolean(fechamento) || (abertura && fechamento && abertura === fechamento)) {
+        return res.status(400).json({ error: "Informe horários de abertura e fechamento diferentes." });
+      }
+      if (Array.isArray(diasFuncionamento) && diasFuncionamento.length && (!abertura || !fechamento)) {
+        return res.status(400).json({ error: "Informe os horários de abertura e fechamento para os dias selecionados." });
+      }
+      aberturaNormalizada = abertura || null;
+      fechamentoNormalizado = fechamento || null;
+    }
 
     const loja = await prisma.loja.findUnique({
       where: { idLoja: id },
@@ -143,6 +179,13 @@ app.put("/lojas/:id", async (req, res) => {
       return res.status(404).json({ error: "Loja não encontrada." });
     }
 
+    const diasEfetivos = diasFuncionamento ?? loja.diasFuncionamento;
+    const aberturaEfetiva = aberturaNormalizada !== undefined ? aberturaNormalizada : loja.hrAbertura;
+    const fechamentoEfetivo = fechamentoNormalizado !== undefined ? fechamentoNormalizado : loja.hrFechamento;
+    if (diasEfetivos.length && (!aberturaEfetiva || !fechamentoEfetivo)) {
+      return res.status(400).json({ error: "Informe os horários de abertura e fechamento para os dias selecionados." });
+    }
+
     if (email !== undefined && email !== loja.usuario?.noEmail) {
       const existe = await prisma.usuario.findUnique({ where: { noEmail: email } });
       if (existe && existe.idUsuario !== loja.usuario?.idUsuario) {
@@ -151,9 +194,20 @@ app.put("/lojas/:id", async (req, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
-      const dadosLoja: { noLoja?: string; nrCnpj?: string } = {};
+      const dadosLoja: {
+        noLoja?: string;
+        nrCnpj?: string;
+        hrAbertura?: string | null;
+        hrFechamento?: string | null;
+        diasFuncionamento?: string[];
+        icAbreFeriados?: boolean;
+      } = {};
       if (noLoja !== undefined) dadosLoja.noLoja = noLoja;
       if (nrCnpj !== undefined) dadosLoja.nrCnpj = nrCnpj;
+      if (aberturaNormalizada !== undefined) dadosLoja.hrAbertura = aberturaNormalizada;
+      if (fechamentoNormalizado !== undefined) dadosLoja.hrFechamento = fechamentoNormalizado;
+      if (diasFuncionamento !== undefined) dadosLoja.diasFuncionamento = diasFuncionamento;
+      if (icAbreFeriados !== undefined) dadosLoja.icAbreFeriados = icAbreFeriados;
 
       if (Object.keys(dadosLoja).length > 0) {
         await tx.loja.update({ where: { idLoja: id }, data: dadosLoja });
@@ -374,7 +428,7 @@ app.patch("/pedidos/:id/status", async (req, res) => {
 app.get("/produtos", async (req, res) => {
   try {
     const produtos = await prisma.produto.findMany({
-      include: { loja: { select: { idLoja: true, noLoja: true } } },
+      include: { loja: { select: { idLoja: true, noLoja: true, hrAbertura: true, hrFechamento: true, diasFuncionamento: true, icAbreFeriados: true } } },
       orderBy: { noProduto: "asc" },
     });
     return res.json(produtos);
@@ -394,7 +448,7 @@ app.get("/produtos/:id", async (req, res) => {
 
     const produto = await prisma.produto.findUnique({
       where: { cdProduto: id },
-      include: { loja: { select: { idLoja: true, noLoja: true } } },
+      include: { loja: { select: { idLoja: true, noLoja: true, hrAbertura: true, hrFechamento: true, diasFuncionamento: true, icAbreFeriados: true } } },
     });
 
     if (!produto) {
