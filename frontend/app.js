@@ -260,7 +260,6 @@ if (sb) sb.innerHTML = [['<img src="img/icons/plus.png" alt="Cadastrar produto" 
     + '<a class="out" href="login.html" data-logout>Sair</a>';
 
 /* produtos */
-const stars = n => '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i>';
 const g = $('#grid');
 if (g) {
     const params = new URLSearchParams(location.search);
@@ -292,8 +291,11 @@ if (g) {
             return `<article class="pc">
                 <a class="img" href="produto.html?id=${p.cdProduto}">${imagemProdutoHtml(p)}</a>
                 <div class="pc-top"><h3>${p.noProduto}</h3><button class="fav ${fav ? 'on' : ''}" data-fav="${p.cdProduto}" aria-label="Favoritar">${fav ? '♥' : '♡'}</button></div>
-                <small class="loja">${p.loja?.noLoja || ''}</small>
-                <div class="stars">${stars(4)}</div>
+                <small class="loja">
+    <a href="produtos.html?loja=${p.loja?.idLoja}" class="link-loja">
+        ${p.loja?.noLoja || ''}
+    </a>
+</small>
                 <div class="pr">${fmt(Number(p.vlProdutoUnitario))}</div>
                 <small class="stock-status ${disponivel ? '' : 'unavailable'}">${disponivel ? `${Number(p.qtProdutoEstoque)} unidade(s) disponível(is)` : 'Produto indisponível'}</small>
                 <button class="btn-or" data-add="${p.cdProduto}" ${disponivel ? '' : 'disabled'}>${disponivel ? 'Adicionar ao carrinho' : 'Indisponível'}</button>
@@ -381,8 +383,8 @@ document.addEventListener('click', async e => {
                     : resultado === 'invalid-store'
                         ? 'Não foi possível identificar a loja deste produto. Atualize a página e tente novamente.'
                         : Number(produto.qtProdutoEstoque) > 0
-                    ? `Há somente ${produto.qtProdutoEstoque} unidade(s) disponível(is) deste produto.`
-                    : 'Produto indisponível no momento.';
+                            ? `Há somente ${produto.qtProdutoEstoque} unidade(s) disponível(is) deste produto.`
+                            : 'Produto indisponível no momento.';
                 mostrarAviso(mensagem, 'warning');
                 return;
             }

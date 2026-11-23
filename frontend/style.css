@@ -2261,3 +2261,25 @@ main {
         white-space: normal;
     }
 }
+
+.link-loja {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.link-loja:hover {
+    color: #2e7d32;
+    text-decoration: underline;
+}
+
+.btn-or {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
