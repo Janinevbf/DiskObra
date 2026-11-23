@@ -638,7 +638,7 @@ if (ct) {
                     '',
                     'Por favor, confirme a disponibilidade e combine comigo a forma de pagamento e o horário/prazo.'
                 ].join('\n');
-                return `<a class="btn-or" href="https://wa.me/${whatsapp}?text=${encodeURIComponent(mensagem)}" target="_blank" rel="noopener noreferrer">Enviar pedido para ${escapeHtml(loja.noLoja)} no WhatsApp</a>`;
+                return `<a id="btn-checkout-whatsapp" class="btn-or" href="https://wa.me/${whatsapp}?text=${encodeURIComponent(mensagem)}" target="_blank" rel="noopener noreferrer">Enviar pedido para ${escapeHtml(loja.noLoja)} no WhatsApp</a>`;
             }).join('');
 
             setCart([]);
@@ -1386,24 +1386,30 @@ if (accNome) {
                         STATUS_PEDIDO_ENCERRADO.has(status.tpStatusPedido)
                     );
                     const status = p.icPago
-                        ? '<span class="tag t-ok">✔ Pago</span>'
-                        : pedidoEncerrado ? '' : '<span class="tag t-tr">❗ Pendente</span>';
+                        ? '<span class="tag t-ok"><img src="img/icons/done.png" class="status-icon" alt=""> Pago</span>': pedidoEncerrado? '<span class="tag t-ok"><img src="img/icons/done.png" class="status-icon" alt=""> Encerrado</span>': '<span class="tag t-tr"><img src="img/icons/exclamation.png" class="status-icon" alt=""> Pendente</span>';
                     const nomeStatus = {
-
-                        PENDENTE: 'Pendente', ENTREGUE: 'Entregue', RETIRADO: 'Retirado', NEGADO: 'Negado'
+                        PENDENTE: 'Pendente',
+                        ENTREGUE: 'Entregue',
+                        RETIRADO: 'Retirado',
+                        NEGADO: 'Negado'
+                    };
+                    const iconesStatus = {
+                        PENDENTE: 'img/icons/exclamation.png',
+                        ENTREGUE: 'img/icons/done.png',
+                        RETIRADO: 'img/icons/packaging.png',
+                        NEGADO: 'img/icons/denied.png'
                     };
                     const statusLojas = (p.statusLojas || []).map(s => {
-                        const statusLoja = s.tpStatusPedido || 'PENDENTE';
-                        const labelStatus = nomeStatus[statusLoja] || 'Pendente';
-                        return `<span class="tag order-state order-state-${statusLoja.toLowerCase()}">${escapeHtml(s.loja?.noLoja || 'Loja')}: ${labelStatus}</span>`;
+                        const nomeLoja = escapeHtml(s.loja?.noLoja || 'Loja');
+                        return `<div class="deposito-status"><span class="deposito-nome">${nomeLoja}</span></div>`;
                     }).join('');
                     const andamento = (p.statusLojas || []).map(s =>
                         `${escapeHtml(s.loja?.noLoja || 'Loja')}: ${nomeStatus[s.tpStatusPedido] || 'Pendente'}${s.dsMotivoNegado ? ` — ${escapeHtml(s.dsMotivoNegado)}` : ''}`
                     ).join('<br>');
                     const itens = (p.produtos || []).map(i =>
-                        `<div class="it"><span>🪛 ${i.produto?.noProduto || 'Produto'} x ${i.qtProdutoRetirado}</span><span>${fmt(i.vlTotalProduto)}</span></div>`
+                        `<div class="it"><span>${i.produto?.noProduto || 'Produto'} x ${i.qtProdutoRetirado}</span><span>${fmt(i.vlTotalProduto)}</span></div>`
                     ).join('');
-                    return `<div class="ord"><div class="top"><span>Pedido #${p.idVenda} - <small>${data}</small></span>${status}${statusLojas}<span>${fmt(p.vlTotalVenda)}</span><span>⌄</span></div>${itens}<div class="more">${andamento ? `<b>Andamento:</b><br>${andamento}<br>` : ''}${p.tpPagamento ? 'Pagamento: ' + escapeHtml(p.tpPagamento) : 'Forma de pagamento não informada'}${p.noEnderecoEntrega ? ' · Entrega: ' + escapeHtml(p.noEnderecoEntrega) : ''}</div></div>`;
+                    return `<div class="ord"><div class="top"><span>Pedido #${p.idVenda} - <small>${data}</small></span>${status}${statusLojas}<span>${fmt(p.vlTotalVenda)}</span><span>⌄</span></div><div class="more">${itens}${andamento ? `<b>Andamento:</b><br>${andamento}<br>` : ''}${p.tpPagamento ? 'Pagamento: ' + escapeHtml(p.tpPagamento) : 'Forma de pagamento não informada'}${p.noEnderecoEntrega ? ' · Entrega: ' + escapeHtml(p.noEnderecoEntrega) : ''}</div></div>`;
                 }).join('')
                 : '<p>Você ainda não fez nenhum pedido.</p>';
         };

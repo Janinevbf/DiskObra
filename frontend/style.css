@@ -641,7 +641,7 @@ main {
     flex-direction: column;
     gap: 12px;
     align-self: start;
-    min-height: 630px
+    min-height: 300px
 }
 
 .side h2 {
@@ -661,7 +661,7 @@ main {
 }
 
 .side .out {
-    margin-top: auto;
+    margin-top: 10px;
     background: #f00;
     color: #fff;
     border-radius: 30px;
@@ -1725,11 +1725,50 @@ main {
     background: #eaf7ee;
     border: 1px solid #b7dfc3;
     border-radius: 8px;
-    padding: 14px
+    padding: 14px;
+    box-sizing: border-box;
+    width: 100%
 }
 
 .checkout-success p {
     margin: 8px 0
+}
+
+#btn-checkout-whatsapp {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    text-decoration: none;
+}
+
+.checkout-success {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.checkout-success .checkout-links {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#btn-checkout-whatsapp {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 12px;
+    margin: 10px 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
 }
 
 .checkout-links {
@@ -1829,18 +1868,25 @@ main {
 .dep-av {
     width: 62px;
     height: 62px;
+    min-width: 62px;
+    min-height: 62px;
     border-radius: 50%;
     background: #eef2f6;
-    display: grid;
-    place-items: center;
-    font-size: 30px
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .dep-av img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: inherit
+    object-fit: contain;
+    object-position: center;
+    border-radius: 50%;
+    display: block;
 }
 
 .dep-head h3 {
@@ -1967,6 +2013,177 @@ main {
     .cart table {
         font-size: 14px
     }
+}
+
+/* Cabeçalho dos pedidos */
+.ord .top {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) auto auto auto;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+}
+
+.ord .top > span:first-child {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.ord .top > span:nth-last-child(2) {
+    font-weight: 800;
+    font-size: 17px;
+    white-space: nowrap;
+    color: #222;
+}
+
+/* Status dos pedidos */
+.ord .top .tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Ícone de pendente */
+.ord .top .tag.t-tr {
+    background: #fff3df;
+    color: #d58a16;
+}
+
+/* Status das lojas */
+.ord .top .order-state {
+    white-space: nowrap;
+}
+
+/* Responsividade */
+@media (max-width: 650px) {
+    .ord .top {
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+    }
+
+    .ord .top > span:first-child {
+        grid-column: 1 / -1;
+    }
+
+    .ord .top .tag {
+        justify-self: start;
+    }
+
+    .ord .top > span:nth-last-child(2) {
+        justify-self: end;
+    }
+}
+
+.status-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Ícones dos status */
+.status-icon {
+    width: 17px;
+    height: 17px;
+    object-fit: contain;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Status pendente */
+.order-state-pendente {
+    background: #fff3df;
+    color: #d58a16;
+}
+
+/* Status entregue */
+.order-state-entregue {
+    background: #e5f7eb;
+    color: #218747;
+}
+
+/* Status retirado */
+.order-state-retirado {
+    background: #e8efff;
+    color: #3766c5;
+}
+
+/* Status negado */
+.order-state-negado {
+    background: #ffebeb;
+    color: #d43c3c;
+}
+
+.status-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.deposito-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 5px 0;
+}
+
+.deposito-nome {
+    background: none;
+    border: none;
+    padding: 0;
+    font-weight: 600;
+    color: #444;
+}
+
+.status-icon-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.status-icon {
+    width: 17px;
+    height: 17px;
+    object-fit: contain;
+}
+
+.ord .top .order-toggle {
+    width: 24px;
+    text-align: center;
+    justify-self: end;
+}
+
+.ord .top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ord .top .order-price {
+    margin-left: auto;
+    white-space: nowrap;
+    font-weight: 800;
+}
+
+.ord .top .order-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    top: -20px;
+    height: 24px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 /* Recuperar Senha */
