@@ -223,23 +223,27 @@ select {
 }
 
 /* header */
+/* HEADER */
 .hd {
-    display: flex;
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) minmax(260px, 380px) 48px;
     align-items: center;
-    gap: 58px;
+    column-gap: clamp(16px, 2vw, 28px);
+
     padding: 8px 40px;
     min-height: 128px;
-    background:  linear-gradient(
+
+    background: linear-gradient(
         180deg,
         rgba(143, 220, 124, 0.65),
         rgba(201, 243, 184, 0.65) 60%,
         rgba(208, 241, 211, 0.65)
     ),
     url("img/Fundo.jpg");
+
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    flex-wrap: wrap
 }
 
 .logo img {
@@ -247,40 +251,43 @@ select {
     width: 150px;
 }
 
-
-
 .hd nav {
     display: flex;
-    gap: 36px;
-    flex: 1
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 0;
 }
 
 .hd nav a {
     color: var(--navy);
     text-decoration: none;
-    font-size: 24px
+    font-size: clamp(16px, 1.65vw, 22px);
+    white-space: nowrap;
 }
 
 .hd nav a:hover {
-    color: var(--orange)
+    color: var(--orange);
 }
 
 .search {
     display: flex;
+    align-items: center;
     background: #fff;
     border-radius: 30px;
     padding: 0 20px;
     height: 50px;
-    align-items: center;
-    width: min(100%, 424px)
+    width: 100%;
+    min-width: 0;
 }
 
 .search input {
     border: 0;
     outline: 0;
     flex: 1;
+    min-width: 0;
     font-size: 17px;
-    background: none
+    background: none;
 }
 
 .search button {
@@ -327,6 +334,7 @@ select {
 /* auth */
 .auth {
   min-height: 100vh; 
+  background-color: #ffffff;
   background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('img/Fundo.jpg');
   background-size: cover;       
   background-position: center;  
@@ -334,11 +342,6 @@ select {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-}
-
-.auth{
-  background-color: #ffffff;
   padding: 32px;
 }
 
@@ -499,27 +502,6 @@ main {
     font-size: 18px
 }
 
-.stars {
-    color: #ffd95a;
-    letter-spacing: 2px;
-    padding: 0 12px;
-    font-size: 22px
-}
-
-.stars i {
-    color: #b8c4d0;
-    font-style: normal
-}
-
-.btn-or {
-    background: var(--orange);
-    color: #fff;
-    border: 0;
-    border-radius: 22px;
-    padding: 10px 18px;
-    font-size: 18px;
-    cursor: pointer
-}
 
 .btn-or:disabled {
     background: #89939d;
@@ -548,7 +530,7 @@ main {
 }
 
 .pc .btn-or {
-    margin: 8px 0 0;
+    margin: auto 0 0;
     width: 100%
 }
 
@@ -1838,12 +1820,6 @@ main {
     white-space: nowrap
 }
 
-.btn-or {
-    white-space: nowrap;
-    font-size: 14px;
-    padding: 13px 20px;
-}
-
 .dep-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -2188,12 +2164,6 @@ main {
 
 /* Recuperar Senha */
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 .recuperar-senha, .redefinir-senha {
   background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('img/Fundo.jpg');
 }
@@ -2336,12 +2306,6 @@ main {
 }
 
 /* Redefinir Senha */
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
 
 .container {
     min-height: calc(100vh - 112px);
@@ -2496,7 +2460,413 @@ main {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+
+    background: var(--orange);
+    color: #fff;
+    border: 0;
+    border-radius: 22px;
+
+    padding: 10px 18px;
+    font-size: 16px;
+    cursor: pointer;
+
     white-space: normal;
     overflow-wrap: anywhere;
     text-align: center;
+
+    margin-top: auto;
+}
+
+
+/* =====================================
+   RESPONSIVIDADE DO CABEÇALHO
+===================================== */
+
+/* Tablets e telas menores */
+@media (max-width: 1000px) {
+    .hd {
+        grid-template-columns: 140px minmax(0, 1fr) 48px;
+        grid-template-areas:
+            "logo nav user"
+            "search search search";
+        gap: 14px 20px;
+        padding: 12px 20px;
+        min-height: auto;
+    }
+
+    .hd .logo {
+        grid-area: logo;
+    }
+
+    .hd nav {
+        grid-area: nav;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+    }
+
+    .hd nav a {
+        font-size: clamp(14px, 1.8vw, 18px);
+    }
+
+    .hd .search {
+        grid-area: search;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .hd .user {
+        grid-area: user;
+        justify-self: end;
+    }
+}
+
+
+/* =====================================
+   RESPONSIVIDADE ATÉ 600PX
+===================================== */
+
+@media (max-width: 600px) {
+
+    /* CABEÇALHO */
+
+    .hd {
+        grid-template-columns: minmax(0, 1fr) 48px;
+        grid-template-areas:
+            "logo user"
+            "nav nav"
+            "search search";
+        gap: 14px;
+        padding: 12px 16px;
+    }
+
+    .hd .logo img {
+        width: 130px;
+        height: auto;
+        max-height: 70px;
+        object-fit: contain;
+    }
+
+    .hd nav {
+        justify-content: center;
+        gap: 12px 18px;
+    }
+
+    .hd nav a {
+        font-size: 15px;
+    }
+
+    .hd .search {
+        height: 44px;
+        padding: 0 14px;
+    }
+
+    .hd .search input {
+        font-size: 15px;
+    }
+
+
+    /* CARRINHO */
+
+    .cart table {
+        display: block;
+        width: 100%;
+        table-layout: auto;
+    }
+
+    .cart thead {
+        display: none;
+    }
+
+    .cart tbody {
+        display: grid;
+        gap: 16px;
+    }
+
+    .cart tr.cart-item-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0 14px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .cart tr.cart-item-row td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: auto;
+        min-width: 0;
+        padding: 12px 4px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        text-align: right;
+    }
+
+    .cart tr.cart-item-row td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        text-align: left;
+        color: #555;
+    }
+
+    .cart tr.cart-item-row td:first-child {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        text-align: left;
+    }
+
+    .cart tr.cart-item-row td:first-child::before {
+        grid-column: 1 / -1;
+    }
+
+    .cart tr.cart-item-row .th {
+        grid-column: 1;
+        grid-row: 2;
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+    }
+
+    .cart tr.cart-item-row .cart-product-name {
+        grid-column: 2;
+        grid-row: 2;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 600;
+    }
+
+    .cart tr.cart-item-row .qty {
+        flex-shrink: 0;
+    }
+
+    .cart tr.cart-item-row .qty span {
+        width: 36px;
+    }
+
+    .cart tr.cart-item-row td:last-child {
+        justify-content: space-between;
+        border-bottom: 0;
+    }
+
+    .cart tr.cart-item-row .del {
+        font-size: 22px;
+    }
+
+
+    /* HISTÓRICO DE PEDIDOS */
+
+    #sec-pedidos {
+        padding: 16px 12px;
+    }
+
+    #sec-pedidos .customer-orders-head {
+        width: 100%;
+        min-width: 0;
+    }
+
+    #sec-pedidos .ord .top {
+        gap: 10px;
+        padding: 14px 8px;
+    }
+
+    #sec-pedidos .ord .top > span:first-child {
+        font-size: 14px;
+    }
+
+    #sec-pedidos .ord .top .tag {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    #sec-pedidos .ord .top > span:nth-last-child(2) {
+        font-size: 15px;
+    }
+
+    #sec-pedidos .ord .more {
+        font-size: 14px;
+    }
+
+
+    /* LOGO DA LOJA */
+
+    .store-logo-field {
+        flex: 1 1 100% !important;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .store-logo-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .store-logo-preview {
+        width: 88px;
+        height: 88px;
+        flex: 0 0 88px;
+    }
+
+    .store-logo-upload {
+        flex: 1 1 180px;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .store-logo-upload .up {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px;
+        font-size: 15px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .store-logo-upload .up img {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .store-logo-upload small {
+        display: block;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .store-logo-upload .store-message {
+        overflow-wrap: anywhere;
+    }
+}
+
+
+/* =====================================
+   AJUSTES GERAIS DO HISTÓRICO
+===================================== */
+
+/* Permite que o conteúdo da conta encolha dentro do grid */
+.acc > div {
+    min-width: 0;
+}
+
+#sec-pedidos,
+#accPedidos,
+#sec-pedidos .ord,
+#sec-pedidos .ord .more {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#sec-pedidos .ord {
+    overflow-wrap: anywhere;
+}
+
+#sec-pedidos .ord .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#sec-pedidos .ord .top > span:first-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#sec-pedidos .ord .top .tag {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+#sec-pedidos .ord .top .deposito-status {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+#sec-pedidos .ord .top > span:nth-last-child(2) {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+#sec-pedidos .ord .top > span:last-child {
+    flex-shrink: 0;
+}
+
+#sec-pedidos .ord .more {
+    overflow-wrap: anywhere;
+}
+
+#sec-pedidos .ord .more .it {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+#sec-pedidos .ord .more .it span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#sec-pedidos .ord .more .it span:last-child {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+
+/* =====================================
+   RESPONSIVIDADE ATÉ 380PX
+===================================== */
+
+@media (max-width: 380px) {
+
+    /* CABEÇALHO */
+
+    .hd {
+        padding: 10px;
+        gap: 12px;
+    }
+
+    .hd nav {
+        gap: 10px 14px;
+    }
+
+    .hd nav a {
+        font-size: 14px;
+    }
+
+
+    /* LOGO DA LOJA */
+
+    .store-logo-controls {
+        align-items: flex-start;
+    }
+
+    .store-logo-preview {
+        width: 76px;
+        height: 76px;
+        flex-basis: 76px;
+    }
+
+    .store-logo-upload {
+        flex-basis: 150px;
+    }
 }

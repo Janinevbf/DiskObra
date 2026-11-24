@@ -248,10 +248,26 @@ const nav2Label = document.body.dataset.nav2 || 'MEU CARRINHO';
 const nav2Href = document.body.dataset.nav2Url || (document.body.dataset.nav2 ? 'conta.html#pedidos' : 'carrinho.html');
 const nav = dep ? [['MINHA LOJA', 'deposito-perfil.html'], ['ESTOQUE', 'deposito-estoque.html'], ['PEDIDOS', 'deposito-pedidos.html']]
     : [['PRODUTOS', 'produtos.html'], [nav2Label, nav2Href], ['DEPÓSITOS', 'depositos.html']];
-$('#hd').outerHTML = `<header class="hd"><a class="logo" href="produtos.html" ><img src="img/LogotipoDiskObra.png"</a>
-<nav>${nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}</nav>
-<form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)"><input name="q" placeholder="Busque o que procura aqui...." aria-label="Buscar"><button aria-label="Buscar"><img src="img/icons/search.png" alt="Buscar"></button></form>
-<a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta">👤</header>`;
+
+$('#hd').outerHTML = `<header class="hd">
+    <a class="logo" href="produtos.html">
+        <img src="img/LogotipoDiskObra.png" alt="DiskObra">
+    </a>
+
+    <nav>
+        ${nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}
+    </nav>
+
+    <form class="search" onsubmit="event.preventDefault();location.href='produtos.html?q='+encodeURIComponent(this.q.value)">
+        <input name="q" placeholder="Busque o que procura aqui..." aria-label="Buscar">
+        <button type="submit" aria-label="Buscar">
+            <img src="img/icons/search.png" alt="Buscar">
+        </button>
+    </form>
+
+    <a class="user" href="${dep ? 'deposito-perfil.html' : 'conta.html'}" aria-label="Minha conta">👤</a>
+</header>`;
+
 
 /* sidebar depósito */
 const sb = $('#sidebar');
@@ -449,13 +465,24 @@ if (ct) {
 
     const draw = () => {
         const cart = getCart();
-        ct.innerHTML = cart.length ? cart.map((c, i) => `<tr>
-            <td><span class="th">${imagemProdutoHtml(c, 'cart-product-image')}</span>${c.noProduto}</td>
-            <td>${fmt(Number(c.vlProdutoUnitario))}</td>
-            <td><div class="qty"><button data-m="${i}" aria-label="Diminuir">−</button><span>${c.qtProdutoRetirado}</span><button data-p="${i}" aria-label="Aumentar">+</button></div></td>
-            <td><b>${fmt(Number(c.vlProdutoUnitario) * c.qtProdutoRetirado)}</b></td>
-            <td><button class="del" data-d="${i}" aria-label="Remover">🗑</button></td>
-        </tr>`).join('') : '<tr><td colspan="5">Seu carrinho está vazio. Escolha produtos para começar.</td></tr>';
+        ct.innerHTML = cart.length ? cart.map((c, i) => `<tr class="cart-item-row">
+    <td data-label="Produto">
+        <span class="th">${imagemProdutoHtml(c, 'cart-product-image')}</span>
+        <span class="cart-product-name">${c.noProduto}</span>
+    </td>
+    <td data-label="Preço">${fmt(Number(c.vlProdutoUnitario))}</td>
+    <td data-label="Quantidade">
+        <div class="qty">
+            <button data-m="${i}" aria-label="Diminuir">−</button>
+            <span>${c.qtProdutoRetirado}</span>
+            <button data-p="${i}" aria-label="Aumentar">+</button>
+        </div>
+    </td>
+    <td data-label="Total"><b>${fmt(Number(c.vlProdutoUnitario) * c.qtProdutoRetirado)}</b></td>
+    <td data-label="Remover">
+        <button class="del" data-d="${i}" aria-label="Remover">🗑</button>
+    </td>
+</tr>`).join('') : '<tr><td colspan="5">Seu carrinho está vazio. Escolha produtos para começar.</td></tr>';
 
         const sub = cart.reduce((s, c) => s + Number(c.vlProdutoUnitario) * c.qtProdutoRetirado, 0);
         const retirada = $('#pagamento')?.value === 'retirada';
@@ -1386,7 +1413,7 @@ if (accNome) {
                         STATUS_PEDIDO_ENCERRADO.has(status.tpStatusPedido)
                     );
                     const status = p.icPago
-                        ? '<span class="tag t-ok"><img src="img/icons/done.png" class="status-icon" alt=""> Pago</span>': pedidoEncerrado? '<span class="tag t-ok"><img src="img/icons/done.png" class="status-icon" alt=""> Encerrado</span>': '<span class="tag t-tr"><img src="img/icons/exclamation.png" class="status-icon" alt=""> Pendente</span>';
+                        ? '<span class="tag t-ok"><img src="img/icons/done.png" class="status-icon" alt=""> Pago</span>' : pedidoEncerrado ? '<span class="tag t-ok"><img src="img/icons/done.png" class="status-icon" alt=""> Encerrado</span>' : '<span class="tag t-tr"><img src="img/icons/exclamation.png" class="status-icon" alt=""> Pendente</span>';
                     const nomeStatus = {
                         PENDENTE: 'Pendente',
                         ENTREGUE: 'Entregue',
